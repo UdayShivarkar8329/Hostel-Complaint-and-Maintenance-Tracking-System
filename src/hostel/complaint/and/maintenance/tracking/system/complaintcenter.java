@@ -1,826 +1,1454 @@
-package hostel.complaint.and.maintenance.tracking.system;
-
+ package hostel.complaint.and.maintenance.tracking.system;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.border.*;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.RoundRectangle2D;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
-public class complaintcenter extends JFrame {
+public class complaintcenter extends JFrame implements ActionListener {
 
-    private final Color NAVY = new Color(8, 39, 83);
-    private final Color BLUE = new Color(25, 112, 232);
-    private final Color LIGHT_BLUE = new Color(245, 249, 254);
-    private final Color TEXT = new Color(18, 48, 96);
-    private final Color BORDER = new Color(215, 226, 240);
+    private final Color NAVY = new Color(9, 39, 78);
+    private final Color BLUE = new Color(25, 113, 232);
+    private final Color TEXT = new Color(18, 50, 95);
+    private final Color LIGHT_BG = new Color(247, 250, 255);
+    private final Color BORDER = new Color(211, 224, 242);
+
+    private JButton addComplaintButton;
+    private JButton searchButton;
+    private JButton resetButton;
 
     private JTextField searchField;
     private JComboBox<String> categoryBox;
     private JComboBox<String> statusBox;
     private JComboBox<String> priorityBox;
-    private JTable complaintTable;
+
+    private JTable table;
+    private DefaultTableModel model;
+    private JLabel showingLabel;
+    private JLabel totalLabel;
+    private JLabel pendingLabel;
+    private JLabel progressLabel;
+    private JLabel resolvedLabel;
+    private JPanel pagesPanel;
+
+    private final List<Object[]> allComplaints = new ArrayList<>();
+    private final List<Object[]> filteredComplaints = new ArrayList<>();
+
+    private int currentPage = 1;
+    private final int rowsPerPage = 9;
+
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/Hostel_Complaint_system";
+    private static final String DB_USER = "root";
+    private static final String DB_PASSWORD = "Uday@8888";
 
     public complaintcenter() {
-
-        setTitle("Complaint Center - Admin Panel");
+        setTitle("Hostel Complaint & Maintenance Tracking System");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(1200, 750));
-        setLayout(new BorderLayout());
-        getContentPane().setBackground(LIGHT_BLUE);
-
-        createSidebar();
-        createMainArea();
-
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setLocationRelativeTo(null);
-        setVisible(true);
+
+        getContentPane().setBackground(LIGHT_BG);
+        setLayout(new BorderLayout());
+
+        add(createSidebar(), BorderLayout.WEST);
+        add(createMainContent(), BorderLayout.CENTER);
+        loadComplaints();
+        refreshTable();
     }
 
-    private void createSidebar() {
+    private Connection getConnection() throws SQLException {
+        return java.sql.DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+    }
 
-        JPanel sidebar = new JPanel();
+    private void loadComplaints() {
+        allComplaints.clear();
+
+        String sql = "SELECT complaint_id, name, username, category, location, " +
+                "title, description, visit_time, room_no, status, " +
+                "complaint_date, priority " +
+                "FROM complaints ORDER BY complaint_date DESC";
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                allComplaints.add(new Object[]{
+                        "#" + rs.getInt("complaint_id"),
+                        rs.getString("name"),
+                        rs.getString("room_no"),
+                        rs.getString("category"),
+                        rs.getString("title"),
+                        formatDate(rs.getTimestamp("complaint_date")),
+                        rs.getString("priority"),
+                        rs.getString("status")
+                });
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Unable to load complaints from database.\n\n" + e.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+
+        filteredComplaints.clear();
+        filteredComplaints.addAll(allComplaints);
+    }
+
+    private String formatDate(Timestamp timestamp) {
+        if (timestamp == null) {
+            return "";
+        }
+        return new java.text.SimpleDateFormat("MMM dd, yyyy").format(timestamp);
+    }
+
+    private JPanel createSidebar() {
+        JPanel sidebar = new JPanel(new BorderLayout());
+        sidebar.setPreferredSize(new Dimension(264, 0));
         sidebar.setBackground(NAVY);
-        sidebar.setPreferredSize(new Dimension(237, 0));
-        sidebar.setLayout(new BorderLayout());
-        add(sidebar, BorderLayout.WEST);
 
         JPanel top = new JPanel();
         top.setOpaque(false);
-        top.setLayout(null);
-        top.setPreferredSize(new Dimension(237, 450));
+        top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
+        top.setBorder(new EmptyBorder(22, 20, 0, 10));
+
+        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        logoPanel.setOpaque(false);
+        logoPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel homeIcon = new JLabel("⌂");
         homeIcon.setForeground(Color.WHITE);
-        homeIcon.setFont(new Font("Arial", Font.PLAIN, 42));
-        homeIcon.setBounds(20, 20, 40, 45);
-        top.add(homeIcon);
+        homeIcon.setFont(new Font("SansSerif", Font.BOLD, 40));
+        homeIcon.setPreferredSize(new Dimension(38, 52));
 
-        JLabel title = new JLabel("HOSTEL");
-        title.setForeground(Color.WHITE);
-        title.setFont(new Font("Arial", Font.BOLD, 20));
-        title.setBounds(69, 18, 150, 28);
-        top.add(title);
+        JPanel titlePanel = new JPanel();
+        titlePanel.setOpaque(false);
+        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
 
-        JLabel subtitle1 = new JLabel("Complaint & Maintenance");
-        subtitle1.setForeground(Color.WHITE);
-        subtitle1.setFont(new Font("Arial", Font.PLAIN, 12));
-        subtitle1.setBounds(69, 43, 165, 20);
-        top.add(subtitle1);
+        JLabel hostel = new JLabel("HOSTEL");
+        hostel.setForeground(Color.WHITE);
+        hostel.setFont(new Font("SansSerif", Font.BOLD, 23));
 
-        JLabel subtitle2 = new JLabel("Tracking System");
-        subtitle2.setForeground(Color.WHITE);
-        subtitle2.setFont(new Font("Arial", Font.PLAIN, 12));
-        subtitle2.setBounds(69, 61, 165, 20);
-        top.add(subtitle2);
+        JLabel complaint = new JLabel("Complaint & Maintenance");
+        complaint.setForeground(Color.WHITE);
+        complaint.setFont(new Font("SansSerif", Font.PLAIN, 12));
+
+        JLabel tracking = new JLabel("Tracking System");
+        tracking.setForeground(Color.WHITE);
+        tracking.setFont(new Font("SansSerif", Font.PLAIN, 12));
+
+        titlePanel.add(hostel);
+        titlePanel.add(complaint);
+        titlePanel.add(tracking);
+
+        logoPanel.add(homeIcon);
+        logoPanel.add(titlePanel);
+
+        top.add(logoPanel);
+        top.add(Box.createVerticalStrut(34));
 
         JLabel adminPanel = new JLabel("ADMIN PANEL");
         adminPanel.setForeground(Color.WHITE);
-        adminPanel.setFont(new Font("Arial", Font.BOLD, 13));
-        adminPanel.setBounds(20, 128, 150, 25);
+        adminPanel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        adminPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         top.add(adminPanel);
+        top.add(Box.createVerticalStrut(10));
 
         JSeparator separator = new JSeparator();
-        separator.setForeground(new Color(62, 91, 128));
-        separator.setBounds(20, 153, 197, 1);
+        separator.setForeground(new Color(58, 91, 132));
+        separator.setMaximumSize(new Dimension(229, 1));
+        separator.setAlignmentX(Component.LEFT_ALIGNMENT);
         top.add(separator);
+        top.add(Box.createVerticalStrut(12));
 
-        createSidebarButton(top, "▣", "Admin Home", 165, false);
-        createSidebarButton(top, "▤", "Complaint Center", 213, true);
-        createSidebarButton(top, "♟", "Maintenance Team", 261, false);
-        createSidebarButton(top, "♜", "Hostel Records", 309, false);
-        createSidebarButton(top, "⚑", "Communication", 357, false);
+        JPanel menuPanel = new JPanel();
+        menuPanel.setOpaque(false);
+        menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+        menuPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        menuPanel.add(createMenuButton("⌂", "Admin Home", false, e -> showAdminHome()));
+        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(createMenuButton("▣", "Complaint Center", true, e -> showComplaintCenter()));
+        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(createMenuButton("●", "Maintenance Team", false, e -> showInfo("Maintenance Team", "Maintenance team management will open here.")));
+        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(createMenuButton("♜", "Hostel Records", false, e -> showInfo("Hostel Records", "Hostel records management will open here.")));
+        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(createMenuButton("⚑", "Communication", false, e -> showCommunication()));
+
+        top.add(menuPanel);
+        top.add(Box.createVerticalStrut(16));
 
         JSeparator separator2 = new JSeparator();
-        separator2.setForeground(new Color(62, 91, 128));
-        separator2.setBounds(20, 425, 197, 1);
-        top.add(separator2);
+        separator2.setForeground(new Color(58, 91, 132));
+        separator2.setMaximumSize(new Dimension(229, 1));
+        separator2.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        createSidebarButton(top, "⇥", "Logout", 445, false);
+        top.add(separator2);
+        top.add(Box.createVerticalStrut(14));
+        top.add(createMenuButton("⇥", "Logout", false, e -> logout()));
 
         sidebar.add(top, BorderLayout.NORTH);
 
         JPanel bottom = new JPanel();
         bottom.setOpaque(false);
         bottom.setLayout(new BoxLayout(bottom, BoxLayout.Y_AXIS));
+        bottom.setBorder(new EmptyBorder(0, 0, 85, 0));
 
         JLabel building = new JLabel("▥");
-        building.setForeground(new Color(91, 132, 180));
-        building.setFont(new Font("Arial", Font.BOLD, 85));
         building.setAlignmentX(Component.CENTER_ALIGNMENT);
+        building.setForeground(new Color(87, 124, 165));
+        building.setFont(new Font("SansSerif", Font.PLAIN, 88));
 
-        JLabel better = new JLabel("Better Hostel");
-        better.setForeground(new Color(155, 196, 239));
-        better.setFont(new Font("Arial", Font.PLAIN, 15));
-        better.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel line1 = new JLabel("Better Hostel");
+        line1.setAlignmentX(Component.CENTER_ALIGNMENT);
+        line1.setForeground(new Color(145, 183, 225));
+        line1.setFont(new Font("SansSerif", Font.BOLD, 16));
 
-        JLabel happier = new JLabel("Happier Students");
-        happier.setForeground(new Color(155, 196, 239));
-        happier.setFont(new Font("Arial", Font.PLAIN, 15));
-        happier.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel line2 = new JLabel("Happier Students");
+        line2.setAlignmentX(Component.CENTER_ALIGNMENT);
+        line2.setForeground(new Color(145, 183, 225));
+        line2.setFont(new Font("SansSerif", Font.BOLD, 16));
 
         bottom.add(building);
-        bottom.add(Box.createVerticalStrut(5));
-        bottom.add(better);
-        bottom.add(happier);
-        bottom.add(Box.createVerticalStrut(100));
+        bottom.add(Box.createVerticalStrut(6));
+        bottom.add(line1);
+        bottom.add(line2);
 
         sidebar.add(bottom, BorderLayout.SOUTH);
+        return sidebar;
     }
 
-    private void createSidebarButton(
-            JPanel parent,
-            String icon,
-            String text,
-            int y,
-            boolean selected) {
-
-        JPanel button = new JPanel(null);
+    private JButton createMenuButton(String icon, String text, boolean selected, ActionListener listener) {
+        JButton button = new JButton(icon + "   " + text);
+        button.setPreferredSize(new Dimension(229, 48));
+        button.setMinimumSize(new Dimension(229, 48));
+        button.setMaximumSize(new Dimension(229, 48));
+        button.setAlignmentX(Component.LEFT_ALIGNMENT);
+        button.setHorizontalAlignment(SwingConstants.LEFT);
+        button.setBorder(new EmptyBorder(0, 10, 0, 0));
+        button.setFont(new Font("SansSerif", Font.PLAIN, 15));
+        button.setForeground(Color.WHITE);
         button.setBackground(selected ? BLUE : NAVY);
-        button.setBounds(10, y, 217, 44);
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setContentAreaFilled(true);
+        button.addActionListener(listener);
 
-        JLabel iconLabel = new JLabel(icon);
-        iconLabel.setForeground(Color.WHITE);
-        iconLabel.setFont(new Font("Arial", Font.BOLD, 22));
-        iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        iconLabel.setBounds(12, 4, 30, 34);
-        button.add(iconLabel);
-
-        JLabel textLabel = new JLabel(text);
-        textLabel.setForeground(Color.WHITE);
-        textLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        textLabel.setBounds(50, 4, 160, 34);
-        button.add(textLabel);
-
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (!selected) {
-                    button.setBackground(new Color(17, 61, 116));
+        if (!selected) {
+            button.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    button.setBackground(new Color(18, 59, 105));
                 }
-            }
 
-            @Override
-            public void mouseExited(MouseEvent e) {
-                if (!selected) {
+                @Override
+                public void mouseExited(MouseEvent e) {
                     button.setBackground(NAVY);
                 }
-            }
+            });
+        }
 
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (text.equals("Logout")) {
-                    dispose();
-                    new login("","");
-                }
-            }
-        });
-
-        parent.add(button);
+        return button;
     }
 
-    private void createMainArea() {
+    private JPanel createMainContent() {
+        JPanel main = new JPanel(new BorderLayout());
+        main.setBackground(LIGHT_BG);
 
-        JPanel mainArea = new JPanel(new BorderLayout());
-        mainArea.setBackground(LIGHT_BLUE);
-        add(mainArea, BorderLayout.CENTER);
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setBackground(Color.WHITE);
+        topBar.setPreferredSize(new Dimension(0, 64));
+        topBar.setBorder(new MatteBorder(0, 0, 1, 0, new Color(225, 233, 244)));
 
-        createTopBar(mainArea);
+        JButton hamburger = new JButton("☰");
+        hamburger.setFont(new Font("SansSerif", Font.PLAIN, 25));
+        hamburger.setForeground(NAVY);
+        hamburger.setBorder(new EmptyBorder(0, 25, 0, 0));
+        hamburger.setContentAreaFilled(false);
+        hamburger.setFocusPainted(false);
+        hamburger.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        hamburger.addActionListener(e -> JOptionPane.showMessageDialog(
+                this,
+                "Sidebar navigation is available on the left.",
+                "Navigation",
+                JOptionPane.INFORMATION_MESSAGE
+        ));
+        topBar.add(hamburger, BorderLayout.WEST);
+
+        JPanel rightTop = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 10));
+        rightTop.setOpaque(false);
+
+        JButton notification = new JButton("🔔  3");
+        notification.setFont(new Font("SansSerif", Font.BOLD, 15));
+        notification.setForeground(NAVY);
+        notification.setBorderPainted(false);
+        notification.setContentAreaFilled(false);
+        notification.setFocusPainted(false);
+        notification.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        notification.addActionListener(e -> showNotifications());
+
+        JLabel profile = new JLabel("●");
+        profile.setFont(new Font("SansSerif", Font.BOLD, 36));
+        profile.setForeground(new Color(190, 209, 239));
+
+        JLabel admin = new JLabel("Admin");
+        admin.setFont(new Font("SansSerif", Font.BOLD, 15));
+        admin.setForeground(NAVY);
+
+        JButton profileButton = new JButton("⌄");
+        profileButton.setFont(new Font("SansSerif", Font.BOLD, 18));
+        profileButton.setForeground(NAVY);
+        profileButton.setBorderPainted(false);
+        profileButton.setContentAreaFilled(false);
+        profileButton.setFocusPainted(false);
+        profileButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        profileButton.addActionListener(e -> showProfileMenu(profileButton));
+
+        rightTop.add(notification);
+        rightTop.add(profile);
+        rightTop.add(admin);
+        rightTop.add(profileButton);
+
+        topBar.add(rightTop, BorderLayout.EAST);
+        main.add(topBar, BorderLayout.NORTH);
 
         JPanel content = new JPanel();
-        content.setBackground(LIGHT_BLUE);
+        content.setBackground(LIGHT_BG);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setBorder(new EmptyBorder(20, 18, 20, 18));
+        content.setBorder(new EmptyBorder(18, 20, 18, 20));
 
-        JPanel headingPanel = new JPanel(new BorderLayout());
-        headingPanel.setOpaque(false);
-        headingPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+        JPanel heading = new JPanel(new BorderLayout());
+        heading.setOpaque(false);
+        heading.setPreferredSize(new Dimension(0, 68));
+        heading.setMaximumSize(new Dimension(Integer.MAX_VALUE, 68));
 
         JPanel headingText = new JPanel();
         headingText.setOpaque(false);
         headingText.setLayout(new BoxLayout(headingText, BoxLayout.Y_AXIS));
 
-        JLabel heading = new JLabel("Complaint Center");
-        heading.setForeground(TEXT);
-        heading.setFont(new Font("Arial", Font.BOLD, 31));
+        JLabel title = new JLabel("Complaint Center");
+        title.setForeground(NAVY);
+        title.setFont(new Font("SansSerif", Font.BOLD, 31));
 
-        JLabel description = new JLabel(
-                "View, search and manage all hostel complaints.");
-        description.setForeground(new Color(40, 72, 123));
-        description.setFont(new Font("Arial", Font.PLAIN, 15));
+        JLabel subtitle = new JLabel("View, search and manage all hostel complaints.");
+        subtitle.setForeground(new Color(48, 82, 130));
+        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 15));
 
-        headingText.add(heading);
+        headingText.add(title);
         headingText.add(Box.createVerticalStrut(2));
-        headingText.add(description);
+        headingText.add(subtitle);
 
-        RoundedButton addComplaint = new RoundedButton(
-                "⊕  Add New Complaint", BLUE, Color.WHITE);
-        addComplaint.setFont(new Font("Arial", Font.BOLD, 13));
-        addComplaint.setPreferredSize(new Dimension(180, 50));
+        addComplaintButton = createBlueButton("⊕  Add New Complaint");
+        addComplaintButton.setPreferredSize(new Dimension(190, 46));
+        addComplaintButton.addActionListener(this);
 
-        headingPanel.add(headingText, BorderLayout.WEST);
-        headingPanel.add(addComplaint, BorderLayout.EAST);
+        heading.add(headingText, BorderLayout.WEST);
+        heading.add(addComplaintButton, BorderLayout.EAST);
 
-        content.add(headingPanel);
-        content.add(Box.createVerticalStrut(10));
+        content.add(heading);
+        content.add(Box.createVerticalStrut(14));
 
-        JPanel filterPanel = createFilterPanel();
-        filterPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 98));
-        content.add(filterPanel);
-
-        content.add(Box.createVerticalStrut(16));
-
-        JPanel cards = createSummaryCards();
-        cards.setMaximumSize(new Dimension(Integer.MAX_VALUE, 124));
-        content.add(cards);
-
-        content.add(Box.createVerticalStrut(16));
-
-        JPanel tablePanel = createComplaintTable();
-        tablePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-        content.add(tablePanel);
-
-        mainArea.add(new JScrollPane(
-                content,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
-    }
-
-    private void createTopBar(JPanel mainArea) {
-
-        JPanel topBar = new JPanel(new BorderLayout());
-        topBar.setBackground(Color.WHITE);
-        topBar.setPreferredSize(new Dimension(0, 64));
-        topBar.setBorder(BorderFactory.createMatteBorder(
-                0, 0, 1, 0, new Color(224, 232, 243)));
-
-        JLabel menu = new JLabel("☰");
-        menu.setForeground(NAVY);
-        menu.setFont(new Font("Arial", Font.PLAIN, 28));
-        menu.setBorder(new EmptyBorder(0, 27, 0, 0));
-
-        JPanel right = new JPanel(new FlowLayout(
-                FlowLayout.RIGHT, 15, 12));
-        right.setOpaque(false);
-
-        JLabel notification = new JLabel("♧");
-        notification.setForeground(NAVY);
-        notification.setFont(new Font("Arial", Font.BOLD, 28));
-
-        JLabel count = new JLabel("3");
-        count.setForeground(Color.WHITE);
-        count.setBackground(new Color(235, 55, 55));
-        count.setOpaque(true);
-        count.setHorizontalAlignment(SwingConstants.CENTER);
-        count.setFont(new Font("Arial", Font.BOLD, 10));
-        count.setPreferredSize(new Dimension(16, 16));
-
-        JPanel notificationPanel = new JPanel(new BorderLayout());
-        notificationPanel.setOpaque(false);
-        notificationPanel.add(notification, BorderLayout.CENTER);
-        notificationPanel.add(count, BorderLayout.NORTH);
-
-        JPanel profile = new JPanel(new BorderLayout());
-        profile.setBackground(new Color(232, 240, 252));
-        profile.setPreferredSize(new Dimension(40, 40));
-
-        JLabel person = new JLabel("●");
-        person.setForeground(NAVY);
-        person.setFont(new Font("Arial", Font.BOLD, 25));
-        person.setHorizontalAlignment(SwingConstants.CENTER);
-        profile.add(person);
-
-        JLabel admin = new JLabel("Admin");
-        admin.setForeground(NAVY);
-        admin.setFont(new Font("Arial", Font.PLAIN, 14));
-
-        JLabel arrow = new JLabel("⌄");
-        arrow.setForeground(NAVY);
-        arrow.setFont(new Font("Arial", Font.BOLD, 18));
-
-        right.add(notificationPanel);
-        right.add(profile);
-        right.add(admin);
-        right.add(arrow);
-        right.add(Box.createHorizontalStrut(15));
-
-        topBar.add(menu, BorderLayout.WEST);
-        topBar.add(right, BorderLayout.EAST);
-
-        mainArea.add(topBar, BorderLayout.NORTH);
-    }
-
-    private JPanel createFilterPanel() {
-
-        RoundedPanel panel = new RoundedPanel(10, Color.WHITE, BORDER);
-        panel.setLayout(new GridBagLayout());
-        panel.setBorder(new EmptyBorder(12, 10, 12, 10));
+        JPanel filter = new RoundedPanel(10, Color.WHITE, BORDER);
+        filter.setLayout(new GridBagLayout());
+        filter.setBorder(new EmptyBorder(10, 10, 10, 10));
+        filter.setMaximumSize(new Dimension(Integer.MAX_VALUE, 82));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(0, 5, 0, 5);
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 7, 0, 7);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weighty = 1;
 
-        searchField = new JTextField();
-        searchField.setFont(new Font("Arial", Font.PLAIN, 13));
-        searchField.setForeground(new Color(86, 112, 155));
-        searchField.setBorder(BorderFactory.createCompoundBorder(
-                new RoundedBorder(BORDER, 8),
-                new EmptyBorder(0, 38, 0, 8)));
-        searchField.setText(
-                "Search by student name, complaint ID or title...");
-
-        JPanel searchPanel = new JPanel(new BorderLayout());
-        searchPanel.setOpaque(false);
-
-        JLabel searchIcon = new JLabel("⌕");
-        searchIcon.setForeground(NAVY);
-        searchIcon.setFont(new Font("Arial", Font.BOLD, 24));
-        searchIcon.setBorder(new EmptyBorder(0, 10, 0, 5));
-
-        searchPanel.add(searchIcon, BorderLayout.WEST);
-        searchPanel.add(searchField, BorderLayout.CENTER);
+        searchField = new HintTextField("Search by student name, complaint ID or title...");
+        searchField.setPreferredSize(new Dimension(330, 40));
+        searchField.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        searchField.setBorder(new CompoundBorder(
+                new LineBorder(new Color(198, 216, 239), 1, true),
+                new EmptyBorder(0, 14, 0, 10)
+        ));
 
         gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 2.8;
-        panel.add(searchPanel, gbc);
+        gbc.weightx = 1.0;
+        filter.add(searchField, gbc);
 
         categoryBox = createComboBox(new String[]{
-                "All Categories", "Electrical", "Plumbing",
-                "Furniture", "Cleaning", "Internet-WiFi"
+                "All Categories", "Electrical", "Plumbing", "Furniture",
+                "Cleaning", "Room Cleaning", "Internet-WiFi", "Water Supply"
         });
 
         statusBox = createComboBox(new String[]{
-                "All Status", "Pending", "In Progress", "Resolved"
+                "All Status", "Pending", "In Progress", "Resolved", "Complete"
         });
 
         priorityBox = createComboBox(new String[]{
                 "All Priority", "High", "Medium", "Low"
         });
 
-        gbc.weightx = 1.2;
         gbc.gridx = 1;
-        panel.add(createFilterGroup("Category", categoryBox), gbc);
+        gbc.weightx = 0;
+        filter.add(createFilterBox("Category", categoryBox, 165), gbc);
 
         gbc.gridx = 2;
-        panel.add(createFilterGroup("Status", statusBox), gbc);
+        filter.add(createFilterBox("Status", statusBox, 150), gbc);
 
         gbc.gridx = 3;
-        panel.add(createFilterGroup("Priority", priorityBox), gbc);
+        filter.add(createFilterBox("Priority", priorityBox, 145), gbc);
 
-        RoundedButton searchButton = new RoundedButton(
-                "⌕  Search", BLUE, Color.WHITE);
-        searchButton.setFont(new Font("Arial", Font.BOLD, 13));
+        searchButton = createBlueButton("⌕  Search");
+        searchButton.setPreferredSize(new Dimension(115, 40));
+        searchButton.addActionListener(this);
 
         gbc.gridx = 4;
-        gbc.weightx = 0.7;
-        panel.add(searchButton, gbc);
+        filter.add(searchButton, gbc);
 
-        RoundedButton resetButton = new RoundedButton(
-                "⟳  Reset", Color.WHITE, NAVY);
-        resetButton.setBorderColor(BORDER);
-        resetButton.setFont(new Font("Arial", Font.BOLD, 13));
+        resetButton = createWhiteButton("⟳  Reset");
+        resetButton.setPreferredSize(new Dimension(100, 40));
+        resetButton.addActionListener(this);
 
         gbc.gridx = 5;
-        gbc.weightx = 0.6;
-        panel.add(resetButton, gbc);
+        filter.add(resetButton, gbc);
 
-        resetButton.addActionListener(e -> {
-            searchField.setText("");
-            categoryBox.setSelectedIndex(0);
-            statusBox.setSelectedIndex(0);
-            priorityBox.setSelectedIndex(0);
-        });
+        content.add(filter);
+        content.add(Box.createVerticalStrut(16));
 
-        return panel;
-    }
+        JPanel stats = new JPanel(new GridLayout(1, 4, 16, 0));
+        stats.setOpaque(false);
+        stats.setMaximumSize(new Dimension(Integer.MAX_VALUE, 108));
 
-    private JPanel createFilterGroup(
-            String title,
-            JComboBox<String> comboBox) {
+        JPanel totalCard = createStatCard("▣", "Total Complaints", "0", "Live count",
+                new Color(218, 236, 255), new Color(42, 126, 232));
+        JPanel pendingCard = createStatCard("◷", "Pending Complaints", "0", "Needs attention",
+                new Color(255, 237, 215), new Color(230, 153, 54));
+        JPanel progressCard = createStatCard("⚙", "In Progress Complaints", "0", "Being handled",
+                new Color(235, 226, 255), new Color(132, 100, 216));
+        JPanel resolvedCard = createStatCard("✓", "Resolved Complaints", "0", "Completed",
+                new Color(218, 247, 239), new Color(53, 177, 139));
 
-        JPanel panel = new JPanel();
-        panel.setOpaque(false);
-        panel.setLayout(new BorderLayout(0, 5));
+        totalLabel = (JLabel) totalCard.getClientProperty("numberLabel");
+        pendingLabel = (JLabel) pendingCard.getClientProperty("numberLabel");
+        progressLabel = (JLabel) progressCard.getClientProperty("numberLabel");
+        resolvedLabel = (JLabel) resolvedCard.getClientProperty("numberLabel");
 
-        JLabel label = new JLabel(title);
-        label.setForeground(TEXT);
-        label.setFont(new Font("Arial", Font.PLAIN, 12));
+        stats.add(totalCard);
+        stats.add(pendingCard);
+        stats.add(progressCard);
+        stats.add(resolvedCard);
 
-        panel.add(label, BorderLayout.NORTH);
-        panel.add(comboBox, BorderLayout.CENTER);
+        content.add(stats);
+        content.add(Box.createVerticalStrut(16));
 
-        return panel;
-    }
+        JPanel tablePanel = new RoundedPanel(10, Color.WHITE, BORDER);
+        tablePanel.setLayout(new BorderLayout());
+        tablePanel.setBorder(new CompoundBorder(
+                new LineBorder(BORDER, 1, true),
+                new EmptyBorder(0, 10, 0, 10)
+        ));
 
-    private JComboBox<String> createComboBox(String[] items) {
-
-        JComboBox<String> comboBox = new JComboBox<>(items);
-        comboBox.setFont(new Font("Arial", Font.PLAIN, 12));
-        comboBox.setForeground(TEXT);
-        comboBox.setBackground(Color.WHITE);
-        comboBox.setBorder(new RoundedBorder(BORDER, 8));
-        comboBox.setPreferredSize(new Dimension(140, 40));
-
-        return comboBox;
-    }
-
-    private JPanel createSummaryCards() {
-
-        JPanel cards = new JPanel(new GridLayout(1, 4, 16, 0));
-        cards.setOpaque(false);
-
-        cards.add(createSummaryCard(
-                "▤", "Total Complaints", "48",
-                "↑ 12% from last month",
-                new Color(231, 243, 255),
-                new Color(71, 145, 232),
-                new Color(0, 139, 91)));
-
-        cards.add(createSummaryCard(
-                "◷", "Pending Complaints", "15",
-                "↑ 5% from last month",
-                new Color(255, 247, 237),
-                new Color(244, 174, 82),
-                new Color(222, 112, 0)));
-
-        cards.add(createSummaryCard(
-                "⚙", "In Progress Complaints", "18",
-                "↑ 8% from last month",
-                new Color(246, 241, 255),
-                new Color(153, 121, 226),
-                new Color(0, 139, 91)));
-
-        cards.add(createSummaryCard(
-                "✓", "Resolved Complaints", "15",
-                "↑ 20% from last month",
-                new Color(237, 250, 246),
-                new Color(63, 184, 153),
-                new Color(0, 139, 91)));
-
-        return cards;
-    }
-
-    private JPanel createSummaryCard(
-            String icon,
-            String title,
-            String value,
-            String growth,
-            Color background,
-            Color iconColor,
-            Color growthColor) {
-
-        RoundedPanel card = new RoundedPanel(
-                10, background, iconColor);
-        card.setLayout(new GridBagLayout());
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(0, 10, 0, 10);
-
-        JPanel iconPanel = new JPanel(new BorderLayout());
-        iconPanel.setBackground(iconColor);
-        iconPanel.setPreferredSize(new Dimension(48, 48));
-
-        JLabel iconLabel = new JLabel(icon);
-        iconLabel.setForeground(Color.WHITE);
-        iconLabel.setFont(new Font("Arial", Font.BOLD, 25));
-        iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        iconPanel.add(iconLabel);
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridheight = 3;
-        gbc.anchor = GridBagConstraints.CENTER;
-        card.add(iconPanel, gbc);
-
-        JPanel textPanel = new JPanel();
-        textPanel.setOpaque(false);
-        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
-
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setForeground(TEXT);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 12));
-
-        JLabel valueLabel = new JLabel(value);
-        valueLabel.setForeground(TEXT);
-        valueLabel.setFont(new Font("Arial", Font.BOLD, 29));
-
-        JLabel growthLabel = new JLabel(growth);
-        growthLabel.setForeground(growthColor);
-        growthLabel.setFont(new Font("Arial", Font.PLAIN, 11));
-
-        textPanel.add(titleLabel);
-        textPanel.add(Box.createVerticalStrut(2));
-        textPanel.add(valueLabel);
-        textPanel.add(Box.createVerticalStrut(2));
-        textPanel.add(growthLabel);
-
-        gbc.gridx = 1;
-        gbc.gridheight = 1;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        card.add(textPanel, gbc);
-
-        return card;
-    }
-
-    private JPanel createComplaintTable() {
-
-        RoundedPanel tablePanel = new RoundedPanel(
-                10, Color.WHITE, BORDER);
-        tablePanel.setLayout(new BorderLayout(0, 8));
-        tablePanel.setBorder(new EmptyBorder(14, 10, 10, 10));
-
-        JLabel heading = new JLabel("All Complaints");
-        heading.setForeground(TEXT);
-        heading.setFont(new Font("Arial", Font.BOLD, 18));
-
-        tablePanel.add(heading, BorderLayout.NORTH);
+        JLabel tableTitle = new JLabel("All Complaints");
+        tableTitle.setFont(new Font("SansSerif", Font.BOLD, 19));
+        tableTitle.setForeground(NAVY);
+        tableTitle.setBorder(new EmptyBorder(12, 5, 10, 0));
+        tablePanel.add(tableTitle, BorderLayout.NORTH);
 
         String[] columns = {
-                "ID", "Student Name", "Room No.", "Category",
-                "Title", "Date", "Priority", "Status", "Action"
+                "ID", "Student Name", "Room No.", "Category", "Title",
+                "Date", "Priority", "Status", "Action"
         };
 
-        Object[][] data = {
-                {"#C048", "Rohit Sharma", "B-101", "Electrical",
-                        "Fan not working", "Apr 26, 2025", "High", "Pending", ""},
-                {"#C047", "Priya Singh", "A-203", "Plumbing",
-                        "Water leakage", "Apr 25, 2025", "Medium", "In Progress", ""},
-                {"#C046", "Amit Kumar", "C-302", "Furniture",
-                        "Broken chair", "Apr 24, 2025", "Low", "Resolved", ""},
-                {"#C045", "Neha Patel", "A-104", "Cleaning",
-                        "Room cleaning", "Apr 23, 2025", "Medium", "In Progress", ""},
-                {"#C044", "Sahil Verma", "B-205", "Electrical",
-                        "Tube light not working", "Apr 22, 2025", "High", "Pending", ""},
-                {"#C043", "Isha Patil", "C-108", "Internet-WiFi",
-                        "Wi-Fi not working", "Apr 21, 2025", "Medium", "In Progress", ""},
-                {"#C042", "Karan Mehta", "D-201", "Plumbing",
-                        "Tap leakage", "Apr 20, 2025", "Low", "Resolved", ""},
-                {"#C041", "Sneha Yadav", "B-304", "Room Cleaning",
-                        "Dirty corridor", "Apr 19, 2025", "Medium", "Pending", ""},
-                {"#C040", "Rohit Patel", "A-102", "Water Supply",
-                        "No water supply", "Apr 18, 2025", "High", "In Progress", ""}
-        };
-
-        DefaultTableModel model = new DefaultTableModel(data, columns) {
+        model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return column == 8;
             }
         };
 
-        complaintTable = new JTable(model);
-        complaintTable.setFont(new Font("Arial", Font.PLAIN, 12));
-        complaintTable.setForeground(TEXT);
-        complaintTable.setRowHeight(43);
-        complaintTable.setShowGrid(true);
-        complaintTable.setGridColor(new Color(232, 238, 247));
-        complaintTable.setIntercellSpacing(new Dimension(0, 0));
-        complaintTable.setSelectionBackground(new Color(235, 243, 255));
-        complaintTable.getTableHeader().setReorderingAllowed(false);
+        table = new JTable(model) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component component = super.prepareRenderer(renderer, row, column);
+                if (!isRowSelected(row)) {
+                    component.setBackground(Color.WHITE);
+                }
+                return component;
+            }
+        };
 
-        complaintTable.getTableHeader().setFont(
-                new Font("Arial", Font.BOLD, 12));
-        complaintTable.getTableHeader().setForeground(TEXT);
-        complaintTable.getTableHeader().setBackground(
-                new Color(245, 248, 253));
-        complaintTable.getTableHeader().setPreferredSize(
-                new Dimension(0, 40));
+        table.setRowHeight(43);
+        table.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        table.setForeground(new Color(30, 62, 108));
+        table.setGridColor(new Color(229, 236, 246));
+        table.setShowVerticalLines(false);
+        table.setIntercellSpacing(new Dimension(0, 1));
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        int[] widths = {65, 125, 90, 105, 170, 115, 90, 115, 190};
+        JTableHeader header = table.getTableHeader();
+        header.setPreferredSize(new Dimension(0, 42));
+        header.setFont(new Font("SansSerif", Font.BOLD, 12));
+        header.setForeground(NAVY);
+        header.setBackground(new Color(246, 249, 253));
+        header.setBorder(new MatteBorder(0, 0, 1, 0, new Color(225, 233, 244)));
 
+        int[] widths = {80, 140, 95, 120, 180, 115, 90, 125, 225};
         for (int i = 0; i < widths.length; i++) {
-            complaintTable.getColumnModel()
-                    .getColumn(i).setPreferredWidth(widths[i]);
+            table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
 
-        DefaultTableCellRenderer renderer =
-                new DefaultTableCellRenderer() {
+        table.getColumnModel().getColumn(6).setCellRenderer(new BadgeRenderer("priority"));
+        table.getColumnModel().getColumn(7).setCellRenderer(new BadgeRenderer("status"));
+        table.getColumnModel().getColumn(8).setCellRenderer(new ActionRenderer());
+        table.getColumnModel().getColumn(8).setCellEditor(new ActionEditor());
 
-                    @Override
-                    public Component getTableCellRendererComponent(
-                            JTable table,
-                            Object value,
-                            boolean selected,
-                            boolean focused,
-                            int row,
-                            int column) {
-
-                        Component c = super.getTableCellRendererComponent(
-                                table, value, selected, focused,
-                                row, column);
-
-                        setBorder(new EmptyBorder(0, 10, 0, 5));
-                        setHorizontalAlignment(SwingConstants.LEFT);
-
-                        if (!selected) {
-                            c.setBackground(Color.WHITE);
-                        }
-
-                        return c;
-                    }
-                };
-
-        for (int i = 0; i < 8; i++) {
-            complaintTable.getColumnModel()
-                    .getColumn(i).setCellRenderer(renderer);
-        }
-
-        complaintTable.getColumnModel().getColumn(6)
-                .setCellRenderer(new PriorityRenderer());
-
-        complaintTable.getColumnModel().getColumn(7)
-                .setCellRenderer(new StatusRenderer());
-
-        complaintTable.getColumnModel().getColumn(8)
-                .setCellRenderer(new ActionRenderer());
-
-        JScrollPane scrollPane = new JScrollPane(complaintTable);
+        JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-
+        scrollPane.getViewport().setBackground(Color.WHITE);
         tablePanel.add(scrollPane, BorderLayout.CENTER);
 
         JPanel bottom = new JPanel(new BorderLayout());
         bottom.setOpaque(false);
-        bottom.setBorder(new EmptyBorder(8, 5, 0, 0));
+        bottom.setPreferredSize(new Dimension(0, 65));
 
-        JLabel showing = new JLabel("Showing 1 - 9 of 48 complaints");
-        showing.setForeground(new Color(54, 82, 126));
-        showing.setFont(new Font("Arial", Font.PLAIN, 12));
+        showingLabel = new JLabel("Showing 0 complaints");
+        showingLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        showingLabel.setForeground(new Color(49, 83, 130));
 
-        JPanel pagination = new JPanel(new FlowLayout(
-                FlowLayout.RIGHT, 7, 0));
-        pagination.setOpaque(false);
+        pagesPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 13));
+        pagesPanel.setOpaque(false);
 
-        RoundedButton previous = createPageButton("‹");
-        RoundedButton page1 = createPageButton("1");
-        RoundedButton page2 = createPageButton("2");
-        RoundedButton page3 = createPageButton("3");
-        RoundedButton page4 = createPageButton("4");
-        RoundedButton page5 = createPageButton("5");
-        RoundedButton next = createPageButton("›");
-
-        page1.setBackground(BLUE);
-        page1.setForeground(Color.WHITE);
-
-        pagination.add(previous);
-        pagination.add(page1);
-        pagination.add(page2);
-        pagination.add(page3);
-        pagination.add(page4);
-        pagination.add(page5);
-        pagination.add(next);
-
-        bottom.add(showing, BorderLayout.WEST);
-        bottom.add(pagination, BorderLayout.EAST);
+        bottom.add(showingLabel, BorderLayout.WEST);
+        bottom.add(pagesPanel, BorderLayout.EAST);
 
         tablePanel.add(bottom, BorderLayout.SOUTH);
+        content.add(tablePanel);
 
-        return tablePanel;
+        main.add(content, BorderLayout.CENTER);
+        updateStats();
+
+        return main;
     }
 
-    private RoundedButton createPageButton(String text) {
+    private void showComplaintCenter() {
+        JOptionPane.showMessageDialog(this,
+                "You are already in the Complaint Center.",
+                "Complaint Center",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
 
-        RoundedButton button = new RoundedButton(
-                text, Color.WHITE, NAVY);
-        button.setBorderColor(BORDER);
-        button.setFont(new Font("Arial", Font.BOLD, 14));
-        button.setPreferredSize(new Dimension(34, 34));
+    private void showAdminHome() {
+        dispose();
+        new adminDash("", "").setVisible(true);
+    }
+
+
+    private void showCommunication() {
+        String message = JOptionPane.showInputDialog(this,
+                "Enter a message for hostel students:",
+                "Communication",
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (message != null && !message.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Message sent successfully.",
+                    "Communication",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void showNotifications() {
+        JOptionPane.showMessageDialog(this,
+                "3 notifications\n\n• New complaint received\n• Complaint status updated\n• Maintenance team response received",
+                "Notifications",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showProfileMenu(Component parent) {
+        JPopupMenu menu = new JPopupMenu();
+
+        JMenuItem profileItem = new JMenuItem("View Profile");
+        JMenuItem settingsItem = new JMenuItem("Settings");
+        JMenuItem logoutItem = new JMenuItem("Logout");
+
+        profileItem.addActionListener(e -> JOptionPane.showMessageDialog(
+                this, "Administrator Profile", "Profile", JOptionPane.INFORMATION_MESSAGE));
+
+        settingsItem.addActionListener(e -> JOptionPane.showMessageDialog(
+                this, "Settings panel", "Settings", JOptionPane.INFORMATION_MESSAGE));
+
+        logoutItem.addActionListener(e -> logout());
+
+        menu.add(profileItem);
+        menu.add(settingsItem);
+        menu.addSeparator();
+        menu.add(logoutItem);
+        menu.show(parent, 0, parent.getHeight());
+
+
+    }
+
+    private void logout() {
+        dispose();
+        new login("", "").setVisible(true);
+    }
+
+    private void showInfo(String title, String message) {
+        JOptionPane.showMessageDialog(this, message, title, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private JComboBox<String> createComboBox(String[] items) {
+        JComboBox<String> combo = new JComboBox<>(items);
+        combo.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        combo.setBackground(Color.WHITE);
+        combo.setPreferredSize(new Dimension(150, 36));
+        combo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        combo.addActionListener(e -> applyFilters());
+        return combo;
+    }
+
+    private JPanel createFilterBox(String label, JComboBox<String> combo, int width) {
+        JPanel wrapper = new JPanel(new BorderLayout(0, 4));
+        wrapper.setOpaque(false);
+        wrapper.setPreferredSize(new Dimension(width, 58));
+
+        JLabel top = new JLabel(label);
+        top.setFont(new Font("SansSerif", Font.BOLD, 12));
+        top.setForeground(NAVY);
+
+        combo.setPreferredSize(new Dimension(width, 36));
+
+        wrapper.add(top, BorderLayout.NORTH);
+        wrapper.add(combo, BorderLayout.CENTER);
+        return wrapper;
+    }
+
+    private JPanel createStatCard(String icon, String title, String number, String percentage,
+                                  Color iconBackground, Color iconColor) {
+        JPanel card = new RoundedPanel(10, Color.WHITE, new Color(207, 222, 241));
+        card.setLayout(new BorderLayout());
+        card.setBorder(new EmptyBorder(13, 16, 12, 16));
+
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        iconLabel.setVerticalAlignment(SwingConstants.CENTER);
+        iconLabel.setForeground(iconColor);
+        iconLabel.setFont(new Font("SansSerif", Font.BOLD, 26));
+
+        JPanel iconBox = new JPanel(new BorderLayout());
+        iconBox.setBackground(iconBackground);
+        iconBox.setPreferredSize(new Dimension(48, 48));
+        iconBox.add(iconLabel);
+
+        JPanel text = new JPanel();
+        text.setOpaque(false);
+        text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
+        text.setBorder(new EmptyBorder(0, 14, 0, 0));
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        titleLabel.setForeground(NAVY);
+
+        JLabel numberLabel = new JLabel(number);
+        numberLabel.setFont(new Font("SansSerif", Font.BOLD, 28));
+        numberLabel.setForeground(NAVY);
+
+        JLabel percent = new JLabel(percentage);
+        percent.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        percent.setForeground(new Color(0, 151, 91));
+
+        text.add(titleLabel);
+        text.add(Box.createVerticalStrut(1));
+        text.add(numberLabel);
+        text.add(Box.createVerticalStrut(1));
+        text.add(percent);
+
+        card.add(iconBox, BorderLayout.WEST);
+        card.add(text, BorderLayout.CENTER);
+        card.putClientProperty("numberLabel", numberLabel);
+
+        return card;
+    }
+
+    private JButton createBlueButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("SansSerif", Font.BOLD, 13));
+        button.setForeground(Color.WHITE);
+        button.setBackground(BLUE);
+        button.setFocusPainted(false);
+        button.setBorder(new EmptyBorder(10, 15, 10, 15));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(new Color(17, 92, 198));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(BLUE);
+            }
+        });
 
         return button;
     }
 
-    private class PriorityRenderer extends DefaultTableCellRenderer {
-
-        @Override
-        public Component getTableCellRendererComponent(
-                JTable table,
-                Object value,
-                boolean selected,
-                boolean focused,
-                int row,
-                int column) {
-
-            JLabel label = new JLabel(String.valueOf(value));
-            label.setHorizontalAlignment(SwingConstants.CENTER);
-            label.setFont(new Font("Arial", Font.BOLD, 11));
-            label.setOpaque(true);
-            label.setBorder(new EmptyBorder(5, 8, 5, 8));
-
-            String priority = String.valueOf(value);
-
-            if (priority.equals("High")) {
-                label.setForeground(new Color(218, 48, 48));
-                label.setBackground(new Color(255, 225, 225));
-            } else if (priority.equals("Medium")) {
-                label.setForeground(new Color(230, 127, 0));
-                label.setBackground(new Color(255, 240, 213));
-            } else {
-                label.setForeground(new Color(0, 143, 102));
-                label.setBackground(new Color(220, 244, 236));
-            }
-
-            JPanel panel = new JPanel(new GridBagLayout());
-            panel.setBackground(Color.WHITE);
-            panel.add(label);
-
-            return panel;
-        }
+    private JButton createWhiteButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("SansSerif", Font.BOLD, 13));
+        button.setForeground(NAVY);
+        button.setBackground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorder(new LineBorder(new Color(202, 218, 238), 1, true));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
     }
 
-    private class StatusRenderer extends DefaultTableCellRenderer {
+    private JButton createPageButton(String text, boolean selected) {
+        JButton button = new JButton(text);
+        button.setPreferredSize(new Dimension(34, 34));
+        button.setFont(new Font("SansSerif", Font.BOLD, 13));
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        @Override
-        public Component getTableCellRendererComponent(
-                JTable table,
-                Object value,
-                boolean selected,
-                boolean focused,
-                int row,
-                int column) {
+        if (selected) {
+            button.setBackground(BLUE);
+            button.setForeground(Color.WHITE);
+            button.setBorder(new LineBorder(BLUE, 1, true));
+        } else {
+            button.setBackground(Color.WHITE);
+            button.setForeground(NAVY);
+            button.setBorder(new LineBorder(new Color(207, 221, 239), 1, true));
+        }
 
-            JLabel label = new JLabel(String.valueOf(value));
-            label.setHorizontalAlignment(SwingConstants.CENTER);
-            label.setFont(new Font("Arial", Font.BOLD, 11));
-            label.setOpaque(true);
-            label.setBorder(new EmptyBorder(5, 10, 5, 10));
+        return button;
+    }
 
-            String status = String.valueOf(value);
+    private JButton createSmallButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("SansSerif", Font.BOLD, 10));
+        button.setForeground(BLUE);
+        button.setBackground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorder(new LineBorder(new Color(147, 195, 255), 1, true));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
+        if (text.equals("...")) {
+            button.setPreferredSize(new Dimension(42, 27));
+        } else if (text.contains("Update")) {
+            button.setPreferredSize(new Dimension(82, 27));
+        } else {
+            button.setPreferredSize(new Dimension(70, 27));
+        }
+
+        return button;
+    }
+
+    private void applyFilters() {
+        String search = searchField.getText().trim();
+        String hint = "Search by student name, complaint ID or title...";
+
+        if (search.equalsIgnoreCase(hint)) {
+            search = "";
+        }
+
+        String category = String.valueOf(categoryBox.getSelectedItem());
+        String status = String.valueOf(statusBox.getSelectedItem());
+        String priority = String.valueOf(priorityBox.getSelectedItem());
+
+        filteredComplaints.clear();
+
+        for (Object[] complaint : allComplaints) {
+            String id = String.valueOf(complaint[0]);
+            String student = String.valueOf(complaint[1]);
+            String title = String.valueOf(complaint[4]);
+
+            boolean searchMatch = search.isEmpty()
+                    || id.toLowerCase().contains(search.toLowerCase())
+                    || student.toLowerCase().contains(search.toLowerCase())
+                    || title.toLowerCase().contains(search.toLowerCase());
+
+            boolean categoryMatch = category.equals("All Categories")
+                    || complaint[3].toString().equals(category);
+
+            boolean statusMatch = status.equals("All Status")
+                    || complaint[7].toString().equals(status)
+                    || (status.equals("Complete")
+                    && complaint[7].toString().equals("Resolved"));
+
+            boolean priorityMatch = priority.equals("All Priority")
+                    || complaint[6].toString().equals(priority);
+
+            if (searchMatch && categoryMatch && statusMatch && priorityMatch) {
+                filteredComplaints.add(complaint);
+            }
+        }
+
+        currentPage = 1;
+        refreshTable();
+    }
+
+    private void refreshTable() {
+        if (model == null) {
+            return;
+        }
+
+        model.setRowCount(0);
+
+        int start = (currentPage - 1) * rowsPerPage;
+        int end = Math.min(start + rowsPerPage, filteredComplaints.size());
+
+        for (int i = start; i < end; i++) {
+            Object[] complaint = filteredComplaints.get(i);
+            model.addRow(new Object[]{
+                    complaint[0], complaint[1], complaint[2], complaint[3],
+                    complaint[4], complaint[5], complaint[6], complaint[7], ""
+            });
+        }
+
+        int shownStart = filteredComplaints.isEmpty() ? 0 : start + 1;
+        int shownEnd = end;
+
+        showingLabel.setText("Showing " + shownStart + " - " + shownEnd
+                + " of " + filteredComplaints.size() + " complaints");
+
+        updatePagination();
+        updateStats();
+    }
+
+    private void updatePagination() {
+        pagesPanel.removeAll();
+
+        int totalPages = Math.max(1, (int) Math.ceil(filteredComplaints.size() / (double) rowsPerPage));
+
+        JButton previous = createPageButton("←", false);
+        previous.setEnabled(currentPage > 1);
+        previous.addActionListener(e -> {
+            if (currentPage > 1) {
+                currentPage--;
+                refreshTable();
+            }
+        });
+        pagesPanel.add(previous);
+
+        for (int i = 1; i <= totalPages; i++) {
+            final int page = i;
+            JButton pageButton = createPageButton(String.valueOf(i), i == currentPage);
+            pageButton.addActionListener(e -> {
+                currentPage = page;
+                refreshTable();
+            });
+            pagesPanel.add(pageButton);
+        }
+
+        JButton next = createPageButton("→", false);
+        next.setEnabled(currentPage < totalPages);
+        next.addActionListener(e -> {
+            if (currentPage < totalPages) {
+                currentPage++;
+                refreshTable();
+            }
+        });
+        pagesPanel.add(next);
+
+        pagesPanel.revalidate();
+        pagesPanel.repaint();
+    }
+
+    private void updateStats() {
+        int total = allComplaints.size();
+        int pending = 0;
+        int progress = 0;
+        int resolved = 0;
+
+        for (Object[] complaint : allComplaints) {
+            String status = complaint[7].toString();
             if (status.equals("Pending")) {
-                label.setForeground(new Color(230, 127, 0));
-                label.setBackground(new Color(255, 240, 213));
+                pending++;
             } else if (status.equals("In Progress")) {
-                label.setForeground(new Color(0, 102, 210));
-                label.setBackground(new Color(222, 237, 255));
-            } else {
-                label.setForeground(new Color(0, 143, 102));
-                label.setBackground(new Color(220, 244, 236));
+                progress++;
+            } else if (status.equals("Resolved")) {
+                resolved++;
+            }
+        }
+
+        if (totalLabel != null) totalLabel.setText(String.valueOf(total));
+        if (pendingLabel != null) pendingLabel.setText(String.valueOf(pending));
+        if (progressLabel != null) progressLabel.setText(String.valueOf(progress));
+        if (resolvedLabel != null) resolvedLabel.setText(String.valueOf(resolved));
+    }
+
+    private void openAddComplaintDialog() {
+        JTextField studentField = new JTextField();
+        JTextField usernameField = new JTextField();
+        JTextField roomField = new JTextField();
+        JTextField locationField = new JTextField();
+        JTextField titleField = new JTextField();
+        JTextField visitTimeField = new JTextField();
+
+        JComboBox<String> category = new JComboBox<>(new String[]{
+                "Electrical", "Plumbing", "Furniture", "Cleaning",
+                "Room Cleaning", "Internet-WiFi", "Water Supply"
+        });
+
+        JComboBox<String> priority = new JComboBox<>(new String[]{
+                "High", "Medium", "Low"
+        });
+
+        JTextArea descriptionArea = new JTextArea(4, 25);
+        descriptionArea.setLineWrap(true);
+        descriptionArea.setWrapStyleWord(true);
+
+        JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        panel.add(new JLabel("Student Name:"));
+        panel.add(studentField);
+        panel.add(new JLabel("Username:"));
+        panel.add(usernameField);
+        panel.add(new JLabel("Room No.:"));
+        panel.add(roomField);
+        panel.add(new JLabel("Location:"));
+        panel.add(locationField);
+        panel.add(new JLabel("Category:"));
+        panel.add(category);
+        panel.add(new JLabel("Complaint Title:"));
+        panel.add(titleField);
+        panel.add(new JLabel("Visit Time:"));
+        panel.add(visitTimeField);
+        panel.add(new JLabel("Priority:"));
+        panel.add(priority);
+        panel.add(new JLabel("Description:"));
+        panel.add(new JScrollPane(descriptionArea));
+
+        int result = JOptionPane.showConfirmDialog(
+                this, panel, "Add New Complaint",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            if (studentField.getText().trim().isEmpty()
+                    || usernameField.getText().trim().isEmpty()
+                    || roomField.getText().trim().isEmpty()
+                    || titleField.getText().trim().isEmpty()
+                    || descriptionArea.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        this, "Please fill all required fields.",
+                        "Missing Information", JOptionPane.WARNING_MESSAGE);
+                return;
             }
 
-            JPanel panel = new JPanel(new GridBagLayout());
-            panel.setBackground(Color.WHITE);
-            panel.add(label);
+            String sql = "INSERT INTO complaints " +
+                    "(name, username, category, location, title, description, " +
+                    "visit_time, room_no, status, priority) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)";
 
-            return panel;
+            try (Connection con = getConnection();
+                 PreparedStatement ps = con.prepareStatement(sql)) {
+
+                ps.setString(1, studentField.getText().trim());
+                ps.setString(2, usernameField.getText().trim());
+                ps.setString(3, String.valueOf(category.getSelectedItem()));
+                ps.setString(4, locationField.getText().trim());
+                ps.setString(5, titleField.getText().trim());
+                ps.setString(6, descriptionArea.getText().trim());
+                ps.setString(7, visitTimeField.getText().trim());
+                ps.setString(8, roomField.getText().trim());
+                ps.setString(9, String.valueOf(priority.getSelectedItem()));
+
+                ps.executeUpdate();
+
+                loadComplaints();
+                applyFilters();
+
+                JOptionPane.showMessageDialog(
+                        this, "Complaint added successfully.",
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(
+                        this, "Unable to add complaint:\n" + e.getMessage(),
+                        "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
-    private class ActionRenderer extends DefaultTableCellRenderer {
+    private void viewComplaint(int row) {
+        if (row < 0 || row >= table.getRowCount()) {
+            return;
+        }
+
+        String idText = table.getValueAt(row, 0).toString().replace("#", "");
+
+        try {
+            int complaintId = Integer.parseInt(idText);
+            showComplaintDetails(complaintId);
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Invalid complaint ID.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+    private void showComplaintDetails(int complaintId) {
+        String sql = "SELECT complaint_id, name, username, category, location, " +
+                "title, description, visit_time, room_no, status, " +
+                "complaint_date, priority FROM complaints WHERE complaint_id = ?";
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, complaintId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    showReplyWindow(
+                            rs.getInt("complaint_id"),
+                            rs.getString("name"),
+                            rs.getString("username"),
+                            rs.getString("category"),
+                            rs.getString("location"),
+                            rs.getString("title"),
+                            rs.getString("description"),
+                            rs.getString("visit_time"),
+                            rs.getString("room_no"),
+                            rs.getString("priority"),
+                            rs.getString("status"),
+                            formatDate(rs.getTimestamp("complaint_date")));
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Complaint not found.", "Complaint",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Unable to open complaint:\n" + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void showReplyWindow(
+            int complaintId, String name, String username,
+            String category, String location, String title,
+            String description, String visitTime, String roomNo,
+            String priority, String status, String complaintDate) {
+
+        JDialog dialog = new JDialog(this, "Complaint Details", true);
+        dialog.setSize(650, 720);
+        dialog.setLocationRelativeTo(this);
+
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(18, 18, 18, 18));
+
+        JTextArea details = new JTextArea();
+        details.setEditable(false);
+        details.setLineWrap(true);
+        details.setWrapStyleWord(true);
+        details.setFont(new Font("SansSerif", Font.PLAIN, 13));
+
+        details.setText(
+                "Complaint ID: #C" + complaintId +
+                        "\nStudent Name: " + name +
+                        "\nUsername: " + username +
+                        "\nRoom No.: " + roomNo +
+                        "\nCategory: " + category +
+                        "\nLocation: " + location +
+                        "\nTitle: " + title +
+                        "\nVisit Time: " + visitTime +
+                        "\nPriority: " + priority +
+                        "\nStatus: " + status +
+                        "\nDate: " + complaintDate +
+                        "\n\nComplaint Description:\n" + description);
+
+        panel.add(new JScrollPane(details), BorderLayout.CENTER);
+
+        JTextArea replyArea = new JTextArea(5, 30);
+        replyArea.setLineWrap(true);
+        replyArea.setWrapStyleWord(true);
+        replyArea.setFont(new Font("SansSerif", Font.PLAIN, 13));
+
+        JButton sendButton = createBlueButton("Send Reply");
+        sendButton.addActionListener(e -> {
+            String reply = replyArea.getText().trim();
+
+            if (reply.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog,
+                        "Please enter a reply.", "Reply",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (saveAdminReply(complaintId, username, reply)) {
+                dialog.dispose();
+            }
+        });
+
+        JPanel replyPanel = new JPanel(new BorderLayout(8, 8));
+        replyPanel.add(new JLabel("Admin Reply:"), BorderLayout.NORTH);
+        replyPanel.add(new JScrollPane(replyArea), BorderLayout.CENTER);
+        replyPanel.add(sendButton, BorderLayout.SOUTH);
+
+        panel.add(replyPanel, BorderLayout.SOUTH);
+
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+
+    private void updateComplaint(int row) {
+        if (row < 0 || row >= table.getRowCount()) return;
+
+        String complaintId = table.getValueAt(row, 0).toString();
+        String studentName = table.getValueAt(row, 1).toString();
+        String currentStatus = table.getValueAt(row, 7).toString();
+
+        JPopupMenu popup = new JPopupMenu();
+
+        JMenuItem pendingItem = new JMenuItem("1. Pending");
+        JMenuItem completeItem = new JMenuItem("2. Complete");
+        JMenuItem messageItem = new JMenuItem("3. Message Personally");
+
+        pendingItem.addActionListener(e -> changeStatus(complaintId, "Pending"));
+        completeItem.addActionListener(e -> changeStatus(complaintId, "Resolved"));
+        messageItem.addActionListener(e -> messageStudent(complaintId, studentName));
+
+        popup.add(pendingItem);
+        popup.add(completeItem);
+        popup.addSeparator();
+        popup.add(messageItem);
+
+        if (currentStatus.equals("Resolved") || currentStatus.equals("Complete")) {
+            completeItem.setEnabled(false);
+        }
+
+        popup.show(table,
+                Math.max(0, table.getColumnModel().getColumn(8).getWidth() - 170),
+                table.getRowHeight() * row + 5);
+    }
+
+    private void changeStatus(String complaintId, String newStatus) {
+        int id;
+
+        try {
+            id = Integer.parseInt(complaintId.replace("#", ""));
+        } catch (NumberFormatException e) {
+            return;
+        }
+
+        String sql = "UPDATE complaints SET status = ? WHERE complaint_id = ?";
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, newStatus);
+            ps.setInt(2, id);
+
+            int updated = ps.executeUpdate();
+
+            if (updated > 0) {
+                loadComplaints();
+                applyFilters();
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Complaint " + complaintId +
+                                " status changed to " +
+                                (newStatus.equals("Resolved") ? "Complete" : newStatus) + ".",
+                        "Status Updated",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Unable to update status:\n" + e.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void messageStudent(String complaintId, String studentName) {
+        JTextArea messageArea = new JTextArea(6, 30);
+        messageArea.setLineWrap(true);
+        messageArea.setWrapStyleWord(true);
+        messageArea.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        messageArea.setText("Hello " + studentName + ",\n\n");
+
+        JScrollPane scroll = new JScrollPane(messageArea);
+        scroll.setBorder(new LineBorder(BORDER));
+
+        int result = JOptionPane.showConfirmDialog(
+                this, scroll,
+                "Message " + studentName + " (" + complaintId + ")",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            String message = messageArea.getText().trim();
+
+            if (message.isEmpty()) return;
+
+            int id;
+            try {
+                id = Integer.parseInt(complaintId.replace("#C", ""));
+            } catch (NumberFormatException e) {
+                return;
+            }
+
+            String username = getUsernameForComplaint(id);
+
+            if (username != null && saveAdminReply(id, username, message)) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Message sent to " + studentName + ".",
+                        "Message Sent",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    }
+
+    private String getUsernameForComplaint(int complaintId) {
+        String sql = "SELECT username FROM complaints WHERE complaint_id = ?";
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, complaintId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString("username");
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Unable to find student username:\n" + e.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+
+        return null;
+    }
+
+    private boolean saveAdminReply(int complaintId, String username, String reply) {
+        String sql = "INSERT INTO complaint_message " +
+                "(complaint_id, username, sender, message) VALUES (?, ?, 'ADMIN', ?)";
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, complaintId);
+            ps.setString(2, username);
+            ps.setString(3, reply);
+
+            ps.executeUpdate();
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Reply sent successfully.",
+                    "Reply",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            return true;
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Unable to send reply:\n" + e.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+    private void moreOptions(int row) {
+        if (row < 0 || row >= table.getRowCount()) return;
+
+        String complaintId = table.getValueAt(row, 0).toString();
+
+        JPopupMenu menu = new JPopupMenu();
+
+        JMenuItem view = new JMenuItem("View Details");
+        JMenuItem update = new JMenuItem("Update Status");
+        JMenuItem message = new JMenuItem("Message Student");
+
+        view.addActionListener(e -> viewComplaint(row));
+        update.addActionListener(e -> updateComplaint(row));
+        message.addActionListener(e -> messageStudent(
+                complaintId,
+                table.getValueAt(row, 1).toString()
+        ));
+
+        menu.add(view);
+        menu.add(update);
+        menu.addSeparator();
+        menu.add(message);
+
+        menu.show(table, table.getWidth() - 190, table.getRowHeight() * row + 5);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == addComplaintButton) {
+            openAddComplaintDialog();
+
+        } else if (e.getSource() == searchButton) {
+            applyFilters();
+
+            if (filteredComplaints.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "No complaints found for the selected search and filters.",
+                        "Search Result",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            }
+
+        } else if (e.getSource() == resetButton) {
+            searchField.setText("Search by student name, complaint ID or title...");
+            searchField.setForeground(new Color(90, 116, 150));
+
+            categoryBox.setSelectedIndex(0);
+            statusBox.setSelectedIndex(0);
+            priorityBox.setSelectedIndex(0);
+
+            loadComplaints();
+            filteredComplaints.clear();
+            filteredComplaints.addAll(allComplaints);
+            currentPage = 1;
+            refreshTable();
+        }
+    }
+
+    class BadgeRenderer extends JLabel implements TableCellRenderer {
+        private final String type;
+
+        BadgeRenderer(String type) {
+            this.type = type;
+            setHorizontalAlignment(SwingConstants.CENTER);
+            setOpaque(true);
+            setFont(new Font("SansSerif", Font.BOLD, 11));
+        }
 
         @Override
         public Component getTableCellRendererComponent(
-                JTable table,
-                Object value,
-                boolean selected,
-                boolean focused,
-                int row,
-                int column) {
+                JTable table, Object value, boolean selected,
+                boolean focused, int row, int column) {
 
-            JPanel panel = new JPanel(new FlowLayout(
-                    FlowLayout.LEFT, 8, 7));
+            String text = String.valueOf(value);
+            setText(text);
+
+            if (type.equals("priority")) {
+                if (text.equals("High")) {
+                    setBackground(new Color(255, 218, 218));
+                    setForeground(new Color(230, 60, 60));
+                } else if (text.equals("Medium")) {
+                    setBackground(new Color(255, 237, 211));
+                    setForeground(new Color(221, 125, 0));
+                } else {
+                    setBackground(new Color(215, 241, 232));
+                    setForeground(new Color(20, 145, 105));
+                }
+            } else {
+                if (text.equals("Pending")) {
+                    setBackground(new Color(255, 239, 213));
+                    setForeground(new Color(224, 130, 0));
+                } else if (text.equals("In Progress")) {
+                    setBackground(new Color(216, 234, 255));
+                    setForeground(new Color(20, 102, 205));
+                } else {
+                    setBackground(new Color(215, 242, 233));
+                    setForeground(new Color(20, 145, 105));
+                }
+            }
+
+            setBorder(new EmptyBorder(5, 8, 5, 8));
+            return this;
+        }
+    }
+
+    class ActionRenderer extends JPanel implements TableCellRenderer {
+        ActionRenderer() {
+            setLayout(new FlowLayout(FlowLayout.LEFT, 5, 6));
+            setOpaque(true);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(
+                JTable table, Object value, boolean selected,
+                boolean focused, int row, int column) {
+
+            removeAll();
+            add(createSmallButton("◉  View"));
+            add(createSmallButton("✎  Update"));
+            add(createSmallButton("..."));
+            setBackground(Color.WHITE);
+            return this;
+        }
+    }
+
+    class ActionEditor extends AbstractCellEditor implements TableCellEditor {
+        private final JPanel panel;
+        private int editingRow;
+
+        ActionEditor() {
+            panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 6));
             panel.setBackground(Color.WHITE);
 
-            RoundedButton view = new RoundedButton(
-                    "◉  View", Color.WHITE, BLUE);
-            view.setBorderColor(new Color(123, 181, 255));
-            view.setFont(new Font("Arial", Font.BOLD, 11));
-            view.setPreferredSize(new Dimension(76, 28));
+            JButton view = createSmallButton("◉  View");
+            JButton update = createSmallButton("✎  Update");
+            JButton more = createSmallButton("...");
 
-            RoundedButton update = new RoundedButton(
-                    "✎  Update", Color.WHITE, BLUE);
-            update.setBorderColor(new Color(123, 181, 255));
-            update.setFont(new Font("Arial", Font.BOLD, 11));
-            update.setPreferredSize(new Dimension(86, 28));
+            view.addActionListener(e -> {
+                viewComplaint(editingRow);
+                fireEditingStopped();
+            });
 
-            RoundedButton more = new RoundedButton(
-                    "⋯", Color.WHITE, NAVY);
-            more.setBorderColor(BORDER);
-            more.setFont(new Font("Arial", Font.BOLD, 16));
-            more.setPreferredSize(new Dimension(40, 28));
+            update.addActionListener(e -> {
+                fireEditingStopped();
+                SwingUtilities.invokeLater(() -> updateComplaint(editingRow));
+            });
+
+            more.addActionListener(e -> {
+                moreOptions(editingRow);
+                fireEditingStopped();
+            });
 
             panel.add(view);
             panel.add(update);
             panel.add(more);
+        }
 
+        @Override
+        public Component getTableCellEditorComponent(
+                JTable table, Object value, boolean selected,
+                int row, int column) {
+            editingRow = row;
             return panel;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return "";
         }
     }
 
-    private class RoundedPanel extends JPanel {
-
+    class RoundedPanel extends JPanel {
         private final int radius;
         private final Color background;
         private final Color borderColor;
 
-        public RoundedPanel(
-                int radius,
-                Color background,
-                Color borderColor) {
-
+        RoundedPanel(int radius, Color background, Color borderColor) {
             this.radius = radius;
             this.background = background;
             this.borderColor = borderColor;
@@ -829,151 +1457,71 @@ public class complaintcenter extends JFrame {
 
         @Override
         protected void paintComponent(Graphics g) {
-
             Graphics2D g2 = (Graphics2D) g.create();
 
             g2.setRenderingHint(
                     RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON);
+                    RenderingHints.VALUE_ANTIALIAS_ON
+            );
 
             g2.setColor(background);
-            g2.fillRoundRect(
-                    0, 0,
-                    getWidth() - 1,
-                    getHeight() - 1,
-                    radius, radius);
+            g2.fill(new RoundRectangle2D.Float(
+                    0, 0, getWidth() - 1, getHeight() - 1,
+                    radius, radius
+            ));
 
             g2.setColor(borderColor);
-            g2.drawRoundRect(
-                    0, 0,
-                    getWidth() - 1,
-                    getHeight() - 1,
-                    radius, radius);
+            g2.draw(new RoundRectangle2D.Float(
+                    0.5f, 0.5f, getWidth() - 2, getHeight() - 2,
+                    radius, radius
+            ));
 
             g2.dispose();
-
             super.paintComponent(g);
         }
     }
 
-    private class RoundedButton extends JButton {
+    class HintTextField extends JTextField {
+        private final String hint;
 
-        private Color backgroundColor;
-        private Color borderColor;
+        HintTextField(String hint) {
+            this.hint = hint;
+            setForeground(new Color(90, 116, 150));
 
-        public RoundedButton(
-                String text,
-                Color background,
-                Color foreground) {
+            addFocusListener(new FocusAdapter() {
+                @Override
+                public void focusGained(FocusEvent e) {
+                    if (getText().equals(hint)) {
+                        setText("");
+                        setForeground(TEXT);
+                    }
+                }
 
-            super(text);
+                @Override
+                public void focusLost(FocusEvent e) {
+                    if (getText().trim().isEmpty()) {
+                        setText(hint);
+                        setForeground(new Color(90, 116, 150));
+                    }
+                }
+            });
 
-            this.backgroundColor = background;
-
-            setForeground(foreground);
-            setBackground(background);
-            setFocusPainted(false);
-            setBorderPainted(false);
-            setContentAreaFilled(false);
-            setOpaque(false);
-            setCursor(new Cursor(Cursor.HAND_CURSOR));
-        }
-
-        public void setBorderColor(Color color) {
-            this.borderColor = color;
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-
-            Graphics2D g2 = (Graphics2D) g.create();
-
-            g2.setRenderingHint(
-                    RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON);
-
-            Color fill = backgroundColor;
-
-            if (getModel().isRollover()) {
-                fill = backgroundColor.equals(BLUE)
-                        ? new Color(15, 92, 205)
-                        : new Color(244, 248, 253);
-            }
-
-            g2.setColor(fill);
-            g2.fillRoundRect(
-                    0, 0,
-                    getWidth() - 1,
-                    getHeight() - 1,
-                    8, 8);
-
-            if (borderColor != null) {
-                g2.setColor(borderColor);
-                g2.drawRoundRect(
-                        0, 0,
-                        getWidth() - 1,
-                        getHeight() - 1,
-                        8, 8);
-            }
-
-            g2.dispose();
-
-            super.paintComponent(g);
-        }
-    }
-
-    private class RoundedBorder extends javax.swing.border.AbstractBorder {
-
-        private final Color color;
-        private final int radius;
-
-        public RoundedBorder(Color color, int radius) {
-            this.color = color;
-            this.radius = radius;
-        }
-
-        @Override
-        public void paintBorder(
-                Component c,
-                Graphics g,
-                int x,
-                int y,
-                int width,
-                int height) {
-
-            Graphics2D g2 = (Graphics2D) g.create();
-
-            g2.setRenderingHint(
-                    RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON);
-
-            g2.setColor(color);
-            g2.drawRoundRect(
-                    x, y,
-                    width - 1,
-                    height - 1,
-                    radius, radius);
-
-            g2.dispose();
-        }
-
-        @Override
-        public Insets getBorderInsets(Component c) {
-            return new Insets(8, 10, 8, 10);
+            setText(hint);
         }
     }
 
     public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(
+                    UIManager.getSystemLookAndFeelClassName()
+            );
+        } catch (Exception ignored) {
+        }
 
         SwingUtilities.invokeLater(() -> {
-
-            try {
-                UIManager.setLookAndFeel(
-                        UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception ignored) {
-            }
-
-            new complaintcenter();
+            complaintcenter frame = new complaintcenter();
+            frame.setVisible(true);
         });
     }
 }
+
