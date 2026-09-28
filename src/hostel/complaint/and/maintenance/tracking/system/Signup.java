@@ -89,7 +89,7 @@ public class Signup extends JFrame implements ActionListener {
         showPassword.setBackground(Color.LIGHT_GRAY);
         showPassword.setFont(new Font("Arial", Font.PLAIN, 14));
         showPassword.addActionListener(this);
-        add(background);
+        background.add(showPassword);
 
         JLabel confirmLabel = new JLabel("Confirm Password:");
         confirmLabel.setBounds(650, 350, 180, 35);

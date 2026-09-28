@@ -101,8 +101,11 @@ public class complaints extends JFrame implements ActionListener {
         sidebar.add(myComplaintsButton);
 
         JButton maintenanceButton =
-                createSideButton("🔧   Maintenance Requests", 355);
+                createSideButton("🔧   Maintenance Requests", 360);
         sidebar.add(maintenanceButton);
+
+        feedbackButton = createSideButton("★   FeedBack",485);
+        sidebar.add(feedbackButton);
 
         JButton announcementButton =
                 createSideButton("⚑   Announcements", 425);
@@ -113,13 +116,12 @@ public class complaints extends JFrame implements ActionListener {
            new announcements(studentname,studentusername,roomNumber);
         });
 
-//        JButton profileButton =
-//                createSideButton("♙   Profile", 495);
-//        sidebar.add(profileButton);
+        feedbackButton.addActionListener(ActiveEvent ->{
+            dispose();
+            new feedback("","");
+        });
 
-//        JButton helpButton =
-//                createSideButton("?   Help & Support", 565);
-//        sidebar.add(helpButton);
+
         myComplaintsButton.addActionListener(e -> {
             dispose();
             new mycomplaints(studentname, studentusername,roomNumber);
@@ -127,7 +129,7 @@ public class complaints extends JFrame implements ActionListener {
 
 
         JButton logoutButton =
-                createSideButton("⇥   Logout", 495);
+                createSideButton("⇥   Logout", 545);
         sidebar.add(logoutButton);
 
         JPanel topBar = new JPanel();

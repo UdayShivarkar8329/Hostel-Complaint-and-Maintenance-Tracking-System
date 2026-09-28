@@ -12,10 +12,7 @@ import java.awt.event.*;
 import java.sql.*;
 import java.util.EventObject;
 
-
-
 public class maintenance extends JFrame {
-
 
     private final Color NAVY = new Color(8, 39, 83);
     private final Color BLUE = new Color(25, 112, 232);
@@ -46,8 +43,8 @@ public class maintenance extends JFrame {
 
     public maintenance(String name, String username) {
 
-       this.adminName = name;
-        this.adminUsername = username;
+        adminName = name;
+        adminUsername = username;
 
         setTitle("Maintenance Team - Admin Panel");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -66,9 +63,9 @@ public class maintenance extends JFrame {
         setVisible(true);
     }
 
-    // =========================================================
-    // SIDEBAR
-    // =========================================================
+
+
+
 
     private void createSidebar() {
 
@@ -211,7 +208,7 @@ public class maintenance extends JFrame {
                     new adminDash(adminName, adminUsername);
                 } else if (text.equals("Complaint Center")) {
                     dispose();
-                    new complaintcenter(adminName, adminUsername).setVisible(true);
+                    new complaintcenter(adminName, adminUsername);
                 } else if (text.equals("Hostel Records")) {
                     dispose();
                     new hostelRecords(adminName,adminUsername);
@@ -383,9 +380,9 @@ public class maintenance extends JFrame {
         );
     }
 
-    // =========================================================
-    // TOP BAR
-    // =========================================================
+
+
+
 
     private void createTopBar(JPanel mainArea) {
 
@@ -510,9 +507,9 @@ public class maintenance extends JFrame {
         mainArea.add(topBar, BorderLayout.NORTH);
     }
 
-    // =========================================================
-    // SUMMARY CARDS
-    // =========================================================
+
+
+
 
     private JPanel createSummaryCards() {
 
@@ -681,9 +678,9 @@ public class maintenance extends JFrame {
         return card;
     }
 
-    // =========================================================
-    // FILTER
-    // =========================================================
+
+
+
 
     private JPanel createFilterPanel() {
 
@@ -875,9 +872,9 @@ public class maintenance extends JFrame {
         return combo;
     }
 
-    // =========================================================
-    // TEAM TABLE
-    // =========================================================
+
+
+
 
     private JPanel createTeamTable() {
 
@@ -1095,9 +1092,9 @@ public class maintenance extends JFrame {
         return panel;
     }
 
-    // =========================================================
-    // LOAD DATA FROM MYSQL
-    // =========================================================
+
+
+
 
     private void loadTeamMembers() {
 
@@ -1162,9 +1159,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // SEARCH
-    // =========================================================
+
+
+
 
     private void searchTeamMembers() {
 
@@ -1267,9 +1264,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // SUMMARY
-    // =========================================================
+
+
+
 
     private void updateSummaryCards() {
 
@@ -1317,9 +1314,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // ADD MEMBER
-    // =========================================================
+
+
+
 
     private void showAddMemberDialog() {
 
@@ -1479,9 +1476,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // VIEW MEMBER
-    // =========================================================
+
+
+
 
     private void showMemberDetails(int row) {
 
@@ -1553,9 +1550,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // EDIT MEMBER
-    // =========================================================
+
+
+
 
     private void editMember(int row) {
 
@@ -1712,9 +1709,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // CHANGE STATUS
-    // =========================================================
+
+
+
 
     private void changeStatus(int row) {
 
@@ -1768,9 +1765,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // REMOVE MEMBER
-    // =========================================================
+
+
+
 
     private void removeMember(int row) {
 
@@ -1852,9 +1849,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // ASSIGN TASK
-    // =========================================================
+
+
+
 
     private void showAssignDialog(
             int row) {
@@ -2021,9 +2018,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // TASK HISTORY
-    // =========================================================
+
+
+
 
     private void showTaskHistory(int row) {
 
@@ -2160,9 +2157,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // PERFORMANCE
-    // =========================================================
+
+
+
 
     private void showPerformance(int row) {
 
@@ -2241,9 +2238,9 @@ public class maintenance extends JFrame {
         );
     }
 
-    // =========================================================
-    // MORE MENU
-    // =========================================================
+
+
+
 
     private JPopupMenu createMoreMenu(int row) {
 
@@ -2265,12 +2262,6 @@ public class maintenance extends JFrame {
         JMenuItem history =
                 createMenuItem("◷  View Task History");
 
-        JMenuItem performance =
-                createMenuItem("▥  View Performance");
-
-        JMenuItem status =
-                createMenuItem("●  Change Status");
-
         JMenuItem remove =
                 createMenuItem("▣  Remove Member");
 
@@ -2278,8 +2269,6 @@ public class maintenance extends JFrame {
 
         popup.add(edit);
         popup.add(history);
-        popup.add(performance);
-        popup.add(status);
         popup.addSeparator();
         popup.add(remove);
 
@@ -2289,14 +2278,6 @@ public class maintenance extends JFrame {
 
         history.addActionListener(
                 e -> showTaskHistory(row)
-        );
-
-        performance.addActionListener(
-                e -> showPerformance(row)
-        );
-
-        status.addActionListener(
-                e -> changeStatus(row)
         );
 
         remove.addActionListener(
@@ -2330,9 +2311,9 @@ public class maintenance extends JFrame {
         return item;
     }
 
-    // =========================================================
-    // ADD MEMBER BOTTOM SECTION
-    // =========================================================
+
+
+
 
     private JPanel createAddMemberSection() {
 
@@ -2473,9 +2454,9 @@ public class maintenance extends JFrame {
         return panel;
     }
 
-    // =========================================================
-    // ACTION RENDERER
-    // =========================================================
+
+
+
 
     private class ActionRenderer
             extends DefaultTableCellRenderer {
@@ -2580,9 +2561,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // REAL ACTION EDITOR
-    // =========================================================
+
+
+
 
     private class ActionEditor
             extends AbstractCellEditor
@@ -2673,20 +2654,34 @@ public class maintenance extends JFrame {
 
             more.addActionListener(e -> {
 
-                fireEditingStopped();
-
                 JPopupMenu menu =
                         createMoreMenu(currentRow);
 
-                SwingUtilities.invokeLater(() -> {
-                    if (more.isShowing()) {
-                        menu.show(
-                                more,
-                                0,
-                                more.getHeight()
+                Rectangle cellRect =
+                        teamTable.getCellRect(
+                                currentRow,
+                                8,
+                                true
                         );
-                    }
-                });
+
+                int popupWidth =
+                        menu.getPreferredSize().width;
+
+                int x =
+                        cellRect.x + cellRect.width - popupWidth;
+
+                int y =
+                        cellRect.y + cellRect.height;
+
+                x = Math.max(0, x);
+
+                menu.show(
+                        teamTable,
+                        x,
+                        y
+                );
+
+                fireEditingStopped();
             });
 
             panel.add(view);
@@ -2709,9 +2704,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // STATUS RENDERER
-    // =========================================================
+
+
+
 
     private class TeamStatusRenderer
             extends DefaultTableCellRenderer {
@@ -2781,9 +2776,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // AVAILABILITY RENDERER
-    // =========================================================
+
+
+
 
     private class AvailabilityRenderer
             extends DefaultTableCellRenderer {
@@ -2853,9 +2848,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // PAGE BUTTON
-    // =========================================================
+
+
+
 
     private RoundedButton createPageButton(
             String text) {
@@ -2884,9 +2879,9 @@ public class maintenance extends JFrame {
         return button;
     }
 
-    // =========================================================
-    // ROUNDED PANEL
-    // =========================================================
+
+
+
 
     private class RoundedPanel
             extends JPanel {
@@ -2947,9 +2942,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // ROUNDED BUTTON
-    // =========================================================
+
+
+
 
     private class RoundedButton
             extends JButton {
@@ -3021,29 +3016,12 @@ public class maintenance extends JFrame {
 
             g2.setColor(fill);
 
-            g2.fillRoundRect(
-                    0,
-                    0,
-                    getWidth() - 1,
-                    getHeight() - 1,
-                    8,
-                    8
-            );
+            g2.fillRoundRect(0,0,getWidth() - 1,getHeight() - 1,8,8);
 
             if (borderColor != null) {
 
-                g2.setColor(
-                        borderColor
-                );
-
-                g2.drawRoundRect(
-                        0,
-                        0,
-                        getWidth() - 1,
-                        getHeight() - 1,
-                        8,
-                        8
-                );
+                g2.setColor(borderColor);
+                g2.drawRoundRect(0,0,getWidth() - 1,getHeight() - 1,8,8);
             }
 
             g2.dispose();
@@ -3051,11 +3029,6 @@ public class maintenance extends JFrame {
             super.paintComponent(g);
         }
     }
-
-    // =========================================================
-    // ROUNDED BORDER
-    // =========================================================
-
     private class RoundedBorder
             extends AbstractBorder {
 
@@ -3073,31 +3046,11 @@ public class maintenance extends JFrame {
         @Override
         public void paintBorder(
                 Component c,
-                Graphics g,
-                int x,
-                int y,
-                int width,
-                int height) {
-
-            Graphics2D g2 =
-                    (Graphics2D) g.create();
-
-            g2.setRenderingHint(
-                    RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON
-            );
-
+                Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(color);
-
-            g2.drawRoundRect(
-                    x,
-                    y,
-                    width - 1,
-                    height - 1,
-                    radius,
-                    radius
-            );
-
+            g2.drawRoundRect(x, y, width - 1,height - 1, radius, radius);
             g2.dispose();
         }
 
@@ -3111,9 +3064,9 @@ public class maintenance extends JFrame {
         }
     }
 
-    // =========================================================
-    // MAIN
-    // =========================================================
+
+
+
 
     public static void main(
             String[] args) {

@@ -93,8 +93,11 @@ public class mycomplaints extends JFrame {
         JButton announcementBtn =
                 menuButton(sidebar, "Announcements", 375);
 
+        JButton feedbackbtn =
+                menuButton(sidebar, "FeedBack", 435);
+
         JButton logoutBtn =
-                menuButton(sidebar, "Logout", 475);
+                menuButton(sidebar, "Logout", 495);
 
         myComplaintBtn.setBackground(blue);
 
@@ -111,6 +114,10 @@ public class mycomplaints extends JFrame {
         announcementBtn.addActionListener(ActiveEvent ->{
             dispose();
             new announcements(studentname,studentusername,roomNumber);
+        });
+        feedbackbtn.addActionListener(ActiveEvent ->{
+            dispose();
+            new feedback(studentname,studentusername);
         });
 //        notificationBtn.addActionListener(ActiveEvent -> {
 //            dispose();

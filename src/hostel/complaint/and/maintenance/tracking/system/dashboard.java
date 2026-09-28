@@ -798,10 +798,6 @@ public class dashboard extends JFrame implements ActionListener {
       return bar;
    }
 
-   // =========================================================
-   // PAGE TITLE
-   // =========================================================
-
    private JPanel createPageTitle() {
 
       JPanel panel = new JPanel();
@@ -811,7 +807,7 @@ public class dashboard extends JFrame implements ActionListener {
       panel.setLayout(
               new BoxLayout(
                       panel,
-                      BoxLayout.Y_AXIS
+                      BoxLayout.X_AXIS
               )
       );
 
@@ -1101,9 +1097,9 @@ public class dashboard extends JFrame implements ActionListener {
                       "▣",
                       "My Complaints",
                       "Total Submitted",
-                      "3",
+                      "1",
                       BLUE,
-                      "↗ 12%"
+                      "↗ 100%"
               )
       );
 
@@ -1134,7 +1130,7 @@ public class dashboard extends JFrame implements ActionListener {
                       "⌁",
                       "Resolved",
                       "This Month",
-                      "8",
+                      "0",
                       new Color(35, 125, 235),
                       "↗ 18%"
               )
@@ -1321,6 +1317,7 @@ public class dashboard extends JFrame implements ActionListener {
 
    // =========================================================
    // BOTTOM AREA
+
    // =========================================================
 
    private JPanel createBottomArea() {
@@ -1412,49 +1409,46 @@ public class dashboard extends JFrame implements ActionListener {
               "Priority"
       };
 
-      Object[][] data = {
-
-              {
-                      "30 Aug 2025",
-                      "Fan not working (Room 204)",
-                      "Completed",
-                      "Medium"
-              },
-
-              {
-                      "28 Aug 2025",
-                      "Water leakage in bathroom",
-                      "Pending",
-                      "High"
-              },
-
-              {
-                      "25 Aug 2025",
-                      "Tube light not working (Room 204)",
-                      "Scheduled",
-                      "Low"
-              },
-
-              {
-                      "27 Aug 2025",
-                      "AC not cooling (Room 302)",
-                      "Pending",
-                      "High"
-              },
-
-              {
-                      "26 Aug 2025",
-                      "Door lock issue (Room 101)",
-                      "Completed",
-                      "Medium"
-              }
-      };
+//      Object[][] data = {
+//
+//              {
+//                      "30 Aug 2025",
+//                      "Fan not working (Room 204)",
+//                      "Completed",
+//                      "Medium"
+//              },
+//
+//              {
+//                      "28 Aug 2025",
+//                      "Water leakage in bathroom",
+//                      "Pending",
+//                      "High"
+//              },
+//
+//              {
+//                      "25 Aug 2025",
+//                      "Tube light not working (Room 204)",
+//                      "Scheduled",
+//                      "Low"
+//              },
+//
+//              {
+//                      "27 Aug 2025",
+//                      "AC not cooling (Room 302)",
+//                      "Pending",
+//                      "High"
+//              },
+//
+//              {
+//                      "26 Aug 2025",
+//                      "Door lock issue (Room 101)",
+//                      "Completed",
+//                      "Medium"
+//              }
+//      };
 
       JTable table =
-              new JTable(
-                      data,
-                      columns
-              );
+              new JTable();
 
       table.setRowHeight(37);
 
@@ -1835,45 +1829,18 @@ public class dashboard extends JFrame implements ActionListener {
       return row;
    }
 
-   // =========================================================
-   // FEEDBACK
-   // =========================================================
+
 
    private JPanel createFeedbackCard() {
 
-      JPanel panel =
-              new GradientPanel(
-                      new Color(86, 58, 230),
-                      new Color(139, 68, 236)
-              );
+      JPanel panel = new GradientPanel(new Color(86, 58, 230), new Color(139, 68, 236));
+      panel.setBorder(new EmptyBorder(18, 20, 18, 20));
+      panel.setLayout(new BorderLayout(10, 0));
 
-      panel.setBorder(
-              new EmptyBorder(
-                      18,
-                      20,
-                      18,
-                      20
-              )
-      );
-
-      panel.setLayout(
-              new BorderLayout(
-                      10,
-                      0
-              )
-      );
-
-      JPanel text =
-              new JPanel();
-
+      JPanel text = new JPanel();
       text.setOpaque(false);
+      text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
 
-      text.setLayout(
-              new BoxLayout(
-                      text,
-                      BoxLayout.Y_AXIS
-              )
-      );
 
       JLabel title =
               new JLabel(
@@ -1991,9 +1958,6 @@ public class dashboard extends JFrame implements ActionListener {
       return panel;
    }
 
-   // =========================================================
-   // UTILITIES
-   // =========================================================
 
    private String getInitial() {
 
@@ -2008,10 +1972,6 @@ public class dashboard extends JFrame implements ActionListener {
               .substring(0, 1)
               .toUpperCase();
    }
-
-   // =========================================================
-   // NAVIGATION
-   // =========================================================
 
    private void openMyComplaints() {
 
@@ -2083,12 +2043,8 @@ public class dashboard extends JFrame implements ActionListener {
 
    private void openFeedback() {
 
-      JOptionPane.showMessageDialog(
-              this,
-              "Thank you for your feedback!",
-              "Feedback",
-              JOptionPane.INFORMATION_MESSAGE
-      );
+      dispose();
+      new feedback(studentName,studentUsername);
    }
 
    private void logout() {

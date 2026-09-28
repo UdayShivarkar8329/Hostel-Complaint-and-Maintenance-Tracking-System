@@ -1067,12 +1067,8 @@ public class announcements extends JFrame implements ActionListener {
 
     private void showFeedback() {
 
-        JOptionPane.showMessageDialog(
-                this,
-                "Thank you for helping us improve the hostel service.",
-                "Feedback",
-                JOptionPane.INFORMATION_MESSAGE
-        );
+        dispose();
+        new feedback("","");
     }
 
     private void logout() {
