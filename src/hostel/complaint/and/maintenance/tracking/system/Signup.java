@@ -17,7 +17,8 @@ public class Signup extends JFrame implements ActionListener {
 
     JLabel roomLabel;
 
-    JLabel userTypeLabel;
+    JLabel userTypeLabel,background;
+
     Choice userTypeChoice;
 
     JCheckBox showPassword;
@@ -30,34 +31,42 @@ public class Signup extends JFrame implements ActionListener {
     String studentname;
     String studentusername;
 
-    Signup() {
+    Signup(String name, String username) {
 
         super("Sign Up");
+        this.studentname = name;
+        this.studentusername = username;
 
-        getContentPane().setBackground(Color.LIGHT_GRAY);
+
         setLayout(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        ImageIcon image = new ImageIcon(ClassLoader.getSystemResource("Icons/signup.png"));
+        Image image1 = image.getImage().getScaledInstance(1750,1080,Image.SCALE_SMOOTH);
+        background = new JLabel(new ImageIcon(image1));
+        background.setBounds(0, 0, 1750, 1080);
+        add(background);
 
         JLabel heading = new JLabel("Create Account");
         heading.setBounds(650, 60, 500, 60);
         heading.setFont(new Font("Segoe UI", Font.BOLD, 45));
         heading.setForeground(new Color(25, 65, 120));
-        add(heading);
+        background.add(heading);
 
         JLabel nameLabel = new JLabel("Name:");
         nameLabel.setBounds(650, 150, 150, 35);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        add(nameLabel);
+        background.add(nameLabel);
 
         nameField = new JTextField();
         nameField.setBounds(820, 150, 320, 40);
         nameField.setFont(new Font("Arial", Font.PLAIN, 18));
-        add(nameField);
+        background.add(nameField);
 
         JLabel usernameLabel = new JLabel("Username:");
         usernameLabel.setBounds(650, 210, 150, 35);
         usernameLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        add(usernameLabel);
+        background.add(usernameLabel);
 
         usernameField = new JTextField();
         usernameField.setBounds(820, 210, 320, 40);
@@ -67,97 +76,100 @@ public class Signup extends JFrame implements ActionListener {
         JLabel passwordLabel = new JLabel("Password:");
         passwordLabel.setBounds(650, 270, 150, 35);
         passwordLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        add(passwordLabel);
+        background.add(passwordLabel);
 
         passwordField = new JPasswordField();
         passwordField.setBounds(820, 270, 320, 40);
         passwordField.setFont(new Font("Arial", Font.PLAIN, 18));
         passwordField.setEchoChar('•');
-        add(passwordField);
+        background.add(passwordField);
 
         showPassword = new JCheckBox("Show Password");
         showPassword.setBounds(820, 310, 150, 25);
         showPassword.setBackground(Color.LIGHT_GRAY);
         showPassword.setFont(new Font("Arial", Font.PLAIN, 14));
         showPassword.addActionListener(this);
-        add(showPassword);
+        add(background);
 
         JLabel confirmLabel = new JLabel("Confirm Password:");
         confirmLabel.setBounds(650, 350, 180, 35);
         confirmLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        add(confirmLabel);
+        background.add(confirmLabel);
 
         confirmPasswordField = new JPasswordField();
         confirmPasswordField.setBounds(820, 350, 320, 40);
         confirmPasswordField.setFont(new Font("Arial", Font.PLAIN, 18));
         confirmPasswordField.setEchoChar('•');
-        add(confirmPasswordField);
+        background.add(confirmPasswordField);
 
         showConfirmPassword = new JCheckBox("Show Password");
         showConfirmPassword.setBounds(820, 390, 150, 25);
         showConfirmPassword.setBackground(Color.LIGHT_GRAY);
         showConfirmPassword.setFont(new Font("Arial", Font.PLAIN, 14));
         showConfirmPassword.addActionListener(this);
-        add(showConfirmPassword);
+        background.add(showConfirmPassword);
 
         roomLabel = new JLabel("Room Number:");
         roomLabel.setBounds(650, 430, 150, 35);
         roomLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        add(roomLabel);
+        background.add(roomLabel);
 
         roomNumberField = new JTextField();
         roomNumberField.setBounds(820, 430, 320, 40);
         roomNumberField.setFont(new Font("Arial", Font.PLAIN, 18));
         roomNumberField.setToolTipText("Enter your hostel room number");
-        add(roomNumberField);
+        background.add(roomNumberField);
 
         userTypeLabel = new JLabel("Login As:");
         userTypeLabel.setBounds(650, 500, 150, 35);
         userTypeLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        add(userTypeLabel);
+        background.add(userTypeLabel);
 
         userTypeChoice = new Choice();
         userTypeChoice.add("Student");
         userTypeChoice.add("Admin");
         userTypeChoice.setBounds(820, 500, 320, 30);
         userTypeChoice.addItemListener(e -> updateRoomField());
-        add(userTypeChoice);
+        background.add(userTypeChoice);
 
         signupButton = new JButton("SIGN UP");
         signupButton.setBounds(650, 550, 180, 45);
         signupButton.setFont(new Font("Arial", Font.BOLD, 18));
+        signupButton.setBackground(new Color(0, 122, 255));
         signupButton.setForeground(Color.BLACK);
-        signupButton.setBackground(Color.WHITE);
+//        signupButton.setBackground(Color.WHITE);
         signupButton.setFocusPainted(false);
         signupButton.setOpaque(true);
         signupButton.setContentAreaFilled(true);
         signupButton.setBorderPainted(false);
         signupButton.addActionListener(this);
-        add(signupButton);
+       background.add(signupButton);
 
         clearButton = new JButton("CLEAR");
         clearButton.setBounds(940, 550, 180, 45);
         clearButton.setFont(new Font("Arial", Font.BOLD, 18));
+        clearButton.setBackground(new Color(0, 122, 255));
         clearButton.setForeground(Color.BLACK);
-        clearButton.setBackground(Color.WHITE);
+//        clearButton.setBackground(Color.WHITE);
         clearButton.setFocusPainted(false);
         clearButton.setOpaque(true);
         clearButton.setContentAreaFilled(true);
         clearButton.setBorderPainted(false);
         clearButton.addActionListener(this);
-        add(clearButton);
+        background.add(clearButton);
 
         backButton = new JButton("BACK TO LOGIN");
         backButton.setBounds(790, 620, 220, 45);
         backButton.setFont(new Font("Arial", Font.BOLD, 16));
+        backButton.setBackground(new Color(0, 122, 255));
         backButton.setForeground(Color.BLACK);
-        backButton.setBackground(Color.WHITE);
-        backButton.setFocusPainted(false);
+//        backButton.setBackground(Color.WHITE);
         backButton.setOpaque(true);
         backButton.setContentAreaFilled(true);
         backButton.setBorderPainted(false);
+        backButton.setFocusPainted(false);
         backButton.addActionListener(this);
-        add(backButton);
+        background.add(backButton);
 
         updateRoomField();
 
@@ -193,6 +205,9 @@ public class Signup extends JFrame implements ActionListener {
             clearButton.setBounds(940, 490, 180, 45);
             backButton.setBounds(790, 560, 220, 45);
         }
+
+
+
 
         revalidate();
         repaint();
@@ -366,7 +381,7 @@ public class Signup extends JFrame implements ActionListener {
 
             userTypeChoice.select("Student");
 
-            updateRoomField();
+//            updateRoomField();
 
             nameField.requestFocus();
 
@@ -379,6 +394,6 @@ public class Signup extends JFrame implements ActionListener {
 
     public static void main(String[] args) {
 
-        new Signup();
+        new Signup("","");
     }
 }

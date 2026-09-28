@@ -38,6 +38,8 @@ public class complaintcenter extends JFrame implements ActionListener {
     private JLabel progressLabel;
     private JLabel resolvedLabel;
     private JPanel pagesPanel;
+    String adminName;
+    String adminUsername;
 
     private final List<Object[]> allComplaints = new ArrayList<>();
     private final List<Object[]> filteredComplaints = new ArrayList<>();
@@ -49,7 +51,10 @@ public class complaintcenter extends JFrame implements ActionListener {
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "Uday@8888";
 
-    public complaintcenter() {
+    public complaintcenter(String name, String Username) {
+        adminName = name;
+        adminUsername = Username;
+
         setTitle("Hostel Complaint & Maintenance Tracking System");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(1200, 750));
@@ -182,9 +187,10 @@ public class complaintcenter extends JFrame implements ActionListener {
         menuPanel.add(Box.createVerticalStrut(5));
         menuPanel.add(createMenuButton("▣", "Complaint Center", true, e -> showComplaintCenter()));
         menuPanel.add(Box.createVerticalStrut(5));
-        menuPanel.add(createMenuButton("●", "Maintenance Team", false, e -> showInfo("Maintenance Team", "Maintenance team management will open here.")));
+        menuPanel.add(createMenuButton("●", "Maintenance Team", false, e -> showmaintenanceteam()));
+//        menuPanel.add(createMenuButton("▣", "Maintenance Team", true, e -> showMaintenanceteam()));
         menuPanel.add(Box.createVerticalStrut(5));
-        menuPanel.add(createMenuButton("♜", "Hostel Records", false, e -> showInfo("Hostel Records", "Hostel records management will open here.")));
+        menuPanel.add(createMenuButton("♜", "Hostel Records", false, e -> showhostelrecords()));
         menuPanel.add(Box.createVerticalStrut(5));
         menuPanel.add(createMenuButton("⚑", "Communication", false, e -> showCommunication()));
 
@@ -291,7 +297,7 @@ public class complaintcenter extends JFrame implements ActionListener {
         JPanel rightTop = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 10));
         rightTop.setOpaque(false);
 
-        JButton notification = new JButton("🔔  3");
+        JButton notification = new JButton("🔔");
         notification.setFont(new Font("SansSerif", Font.BOLD, 15));
         notification.setForeground(NAVY);
         notification.setBorderPainted(false);
@@ -549,6 +555,15 @@ public class complaintcenter extends JFrame implements ActionListener {
     private void showAdminHome() {
         dispose();
         new adminDash("", "").setVisible(true);
+    }
+
+    private void showmaintenanceteam(){
+        dispose();
+        new maintenance("","").setVisible(true);
+    }
+    private void showhostelrecords(){
+        dispose();
+        new hostelRecords("","").setVisible(true);
     }
 
 
@@ -1519,7 +1534,7 @@ public class complaintcenter extends JFrame implements ActionListener {
         }
 
         SwingUtilities.invokeLater(() -> {
-            complaintcenter frame = new complaintcenter();
+            complaintcenter frame = new complaintcenter("", "");
             frame.setVisible(true);
         });
     }

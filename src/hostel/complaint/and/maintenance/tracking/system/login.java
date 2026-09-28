@@ -29,19 +29,10 @@ public class login extends JFrame implements ActionListener {
         setLayout(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        ImageIcon image = new ImageIcon(
-                ClassLoader.getSystemResource("Icons/login.jpg")
-        );
-
-        Image image1 = image.getImage().getScaledInstance(
-                1750,
-                1080,
-                Image.SCALE_SMOOTH
-        );
-
+        ImageIcon image = new ImageIcon(ClassLoader.getSystemResource("Icons/login.jpg"));
+        Image image1 = image.getImage().getScaledInstance(1750,1080,Image.SCALE_SMOOTH);
         JLabel background = new JLabel(new ImageIcon(image1));
         background.setBounds(0, 0, 1750, 1080);
-
         add(background);
 
         JLabel heading = new JLabel("Welcome Back!");
@@ -255,8 +246,7 @@ public class login extends JFrame implements ActionListener {
 
                         dispose();
 
-                        new dashboard(loggedInName, loggedInUsername,roomNumber);
-                    }
+                        new dashboard(loggedInName, loggedInUsername,roomNumber);}
                 } else {
 
                     JOptionPane.showMessageDialog(
@@ -318,7 +308,7 @@ public class login extends JFrame implements ActionListener {
 
             dispose();
 
-            new Signup();
+            new Signup("","");
         }
     }
 

@@ -2093,7 +2093,8 @@ public class dashboard extends JFrame implements ActionListener {
 
    private void logout() {
 
-      int choice = JOptionPane.showConfirmDialog(
+      int choice =
+              JOptionPane.showConfirmDialog(
                       this,
                       "Are you sure you want to logout?",
                       "Logout",
